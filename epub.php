@@ -7,6 +7,7 @@
 class EPub {
     public $xml; //FIXME change to protected, later
     protected $file;
+    protected $meta;
     protected $namespaces;
 
     /**
@@ -16,15 +17,40 @@ class EPub {
      * @throws Exception if metadata could not be loaded
      */
     public function __construct($file){
+        // open file
         $this->file = $file;
-        $this->xml = simplexml_load_file('zip://'.$this->file.'#OEBPS/content.opf');
-        if($this->xml === false){
-            throw new Exception('Failed to access epub metadata');
+        $zip = new ZipArchive();
+        if(!$zip->open($this->file)){
+            throw new Exception('Failed to read epub file');
         }
 
-        $this->namespaces = $this->xml->getDocNamespaces(true);
+        // read container data
+        $container = $zip->getFromName('META-INF/container.xml');
+        if($container == false){
+            throw new Exception('Failed to access epub container data');
+        }
+        $container = new SimpleXMLElement($container);
+        $container->registerXPathNamespace('n','urn:oasis:names:tc:opendocument:xmlns:container');
+        $nodes = $container->xpath('//n:rootfiles/n:rootfile[@media-type="application/oebps-package+xml"]');
+        $this->meta = (String) $nodes[0]['full-path'];
+
+        // load metadata
+        $xml = $zip->getFromName($this->meta);
+        if(!$xml){
+            throw new Exception('Failed to access epub metadata');
+        }
+        $this->xml = new SimpleXMLElement($xml);
+
+        // register namespaces
+        $ns = array(
+            '' => 'http://www.idpf.org/2007/opf',
+            'dc'  => 'http://purl.org/dc/elements/1.1/'
+        );
+        $this->namespaces = array_merge($ns,$this->xml->getDocNamespaces(true));
+
+
         foreach($this->namespaces as $ns => $url){
-            if($ns) $this->xml->registerXPathNamespace($ns,$url);
+            $this->xml->registerXPathNamespace($ns,$url);
         }
     }
 
@@ -33,11 +59,11 @@ class EPub {
      */
     public function save(){
         $zip = new ZipArchive();
-        $res = $zip->open($this->file, ZipArchive::CREATE);
+        $res = @$zip->open($this->file, ZipArchive::CREATE);
         if($res === false){
             throw new Exception('Failed to write back metadata');
         }
-        $zip->addFromString('OEBPS/content.opf',$this->xml->asXML());
+        $zip->addFromString($this->meta,$this->xml->asXML());
         $zip->close();
     }
 
@@ -99,7 +125,7 @@ class EPub {
      * @param string $title
      */
     public function Title($title=false){
-        return $this->getset('dc:title',$lang);
+        return $this->getset('dc:title',$title);
     }
 
     /**
@@ -202,6 +228,8 @@ class EPub {
     /**
      * A simple getter/setter for simple meta attributes
      *
+     * It should only be used for attributes that are expected to be unique
+     *
      * @param string $item   XML node to set/get
      * @param string $value  New node value
      * @param string $att    Attribute name
@@ -215,18 +243,35 @@ class EPub {
         }
 
         // set value
-        if($value){
+        if($value !== false){
             $node = $this->xpath($xpath);
-            if($node){
-                $node->{0} = $value;
+
+            if(is_array($node)){
+                // there are multiple matching nodes for some reason
+                // we'll replace them all with our own single one
+                // this will also be run if xcode returns an empty array
+                foreach($node as $n) $this->deleteNode($n);
+                if($att){
+                    $this->addMeta($item,$value,array($att=>$aval));
+                }else{
+                    $this->addMeta($item,$value);
+                }
+            }elseif($value === ''){
+                // the user want's to empty this value -> delete the node
+                $this->deleteNode($node);
             }else{
-                $this->addMeta($item,$value,array($att=>$aval));
+                // replace value
+                $node->{0} = $value;
             }
         }
 
         // get value
         $node = $this->xpath($xpath);
-        return (String) $node;
+        if($node){
+            return (String) $node;
+        }else{
+            return '';
+        }
     }
 
     /**
@@ -242,14 +287,13 @@ class EPub {
     /**
      * Fetch Item(s) via xpath expression
      *
-     * The xpath is applied on the metadata xml node, not at the root.
      * Namespaces are already correctly registered.
      *
      * @param string $xpath  the xpath expression
      * @param bool   $simple return a SimpleXMLElement instead of Array if only one hit
      */
     protected function xpath($xpath, $simple=true){
-        $result = $this->xml->metadata->xpath($xpath);
+        $result = $this->xml->xpath($xpath);
         if($simple && is_array($result) && count($result) === 1){
             return $result[0];
         }else{
@@ -274,7 +318,9 @@ class EPub {
         $node = $this->xml->metadata->addChild($item,$value,$this->namespaces[$ns]);
         foreach($attributes as $attr => $value){
             list($ns, $item) = explode(':', $attr);
-            if(!$item) $ns   = '';
+            if(!$item){
+                $ns   = '';
+            }
             $node->addAttribute($attr,$value,$this->namespaces[$ns]);
         }
     }
