@@ -1,0 +1,89 @@
+body, td, th, input, textarea {
+    font-family: "Arial", sans-serif;
+    color: #333;
+    font-size: 15px;
+}
+
+a {
+    color: #4183C4;
+    text-decoration: none;
+}
+
+a:hover,
+a:active {
+    background-color: #efefef;
+}
+
+#wrapper {
+    height: 600px;
+    width:  920px;
+    margin: auto;
+    padding: 0;
+    border: 1px solid #ccc;
+}
+
+#booklist {
+    float: left;
+    width: 300px;
+    height: 600px;
+    overflow: auto;
+    list-style-type: none;
+    padding: 0;
+    margin: 0 25px 0 0;
+    font-size: 13px;
+}
+
+#booklist li {
+    margin: 5px;
+}
+
+#bookpanel {
+    float: left;
+    width: 590px;
+    height: 600px;
+    overflow: auto;
+}
+
+.center {
+    text-align: center;
+}
+
+table th,
+table td {
+    vertical-align: top;
+    margin: 5px;
+    padding: 0;
+}
+
+table th {
+    text-align: right;
+    font-weight: bold;
+    padding: 3px;
+    padding-right: 20px;
+}
+
+table td textarea,
+table td input {
+    width: 450px;
+    border: none;
+    padding: 3px;
+    margin: 0;
+}
+
+table td textarea {
+    height: 250px;
+}
+
+table td p {
+    margin: 0;
+    padding: 0;
+}
+
+table td p input {
+    width: 200px;
+}
+
+table td textarea:focus,
+table td input:focus {
+    border: 1px solid #4183C4;
+}
