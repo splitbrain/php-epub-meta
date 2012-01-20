@@ -44,6 +44,7 @@ class EPub {
         // register namespaces
         $ns = array(
             '' => 'http://www.idpf.org/2007/opf',
+            'opf' => 'http://www.idpf.org/2007/opf',
             'dc'  => 'http://purl.org/dc/elements/1.1/'
         );
         $this->namespaces = array_merge($ns,$this->xml->getDocNamespaces(true));
@@ -108,12 +109,24 @@ class EPub {
         }
 
         // read current data
+        $rolefix = false;
         $authors = array();
         $res = $this->xpath('//dc:creator[@opf:role="aut"]',false);
+        if(count($res) == 0){
+            // no nodes where found, let's try again without role
+            $res = $this->xpath('//dc:creator',false);
+            $rolefix = true;
+        }
         foreach($res as $r){
             $name = (String) $r;
             $as   = (String) $this->readAttribute($r,'opf','file-as');
-            if(!$as) $as = $name;
+            if(!$as){
+                $as = $name;
+                $r->addAttribute('opf:file-as',$as,$this->namespaces['opf']);
+            }
+            if($rolefix){
+                $r->addAttribute('opf:role','aut',$this->namespaces['opf']);
+            }
             $authors[$as] = $name;
         }
         return $authors;
