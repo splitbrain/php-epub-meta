@@ -165,7 +165,35 @@ class EPub {
         return $this->getset('dc:identifier',$amazon,'opf:scheme','AMAZON');
     }
 
+    /**
+     * Set or get the book's subjects (aka. tags)
+     *
+     * @param array $subjects
+     */
     public function Subjects($subjects=false){
+        // setter
+        if($subjects){
+            if(is_string($subjects)){
+                $subjects = explode(',',$subjects);
+                $subjects = array_map('trim',$subjects);
+            }
+
+            $nodes = $this->xpath('//dc:subject');
+            foreach($nodes as $node){
+                $this->deleteNode($node);
+            }
+            foreach($subjects as $subj){
+                $this->addMeta('dc:subject',$subj);
+            }
+        }
+
+        //getter
+        $subjects = array();
+        $nodes = $this->xpath('//dc:subject');
+        foreach($nodes as $node){
+            $subjects[] = (String) $node;
+        }
+        return $subjects;
     }
 
     public function Cover($path){
