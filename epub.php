@@ -16,16 +16,29 @@ class EPub {
      * @throws Exception if metadata could not be loaded
      */
     public function __construct($file){
-        $this->xml = simplexml_load_file('zip://'.$file.'#OEBPS/content.opf');
+        $this->file = $file;
+        $this->xml = simplexml_load_file('zip://'.$this->file.'#OEBPS/content.opf');
         if($this->xml === false){
             throw new Exception('Failed to access epub metadata');
         }
-        $this->file = $file;
 
         $this->namespaces = $this->xml->getDocNamespaces(true);
         foreach($this->namespaces as $ns => $url){
             if($ns) $this->xml->registerXPathNamespace($ns,$url);
         }
+    }
+
+    /**
+     * Writes back all meta data changes
+     */
+    public function save(){
+        $zip = new ZipArchive();
+        $res = $zip->open($this->file, ZipArchive::CREATE);
+        if($res === false){
+            throw new Exception('Failed to write back metadata');
+        }
+        $zip->addFromString('OEBPS/content.opf',$this->xml->asXML());
+        $zip->close();
     }
 
     /**
