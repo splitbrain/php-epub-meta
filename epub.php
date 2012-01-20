@@ -93,28 +93,112 @@ class EPub {
         return $authors;
     }
 
+    /**
+     * Set or get the book title
+     *
+     * @param string $title
+     */
     public function Title($title=false){
+        return $this->getset('dc:title',$lang);
     }
 
+    /**
+     * Set or get the book's language
+     *
+     * @param string $lang
+     */
     public function Language($lang=false){
+        return $this->getset('dc:language',$lang);
     }
 
+    /**
+     * Set or get the book' publisher info
+     *
+     * @param string $publisher
+     */
     public function Publisher($publisher=false){
+        return $this->getset('dc:publisher',$publisher);
     }
 
+    /**
+     * Set or get the book's copyright info
+     *
+     * @param string $rights
+     */
     public function Copyright($rights=false){
+        return $this->getset('dc:rights',$rights);
     }
 
+    /**
+     * Set or get the book's description
+     *
+     * @param string $description
+     */
     public function Description($description=false){
+        return $this->getset('dc:description',$description);
     }
 
+    /**
+     * Set or get the book's ISBN number
+     *
+     * @param string $isbn
+     */
     public function ISBN($isbn=false){
+        return $this->getset('dc:identifier',$isbn,'opf:scheme','ISBN');
+    }
+
+    /**
+     * Set or get the Google Books ID
+     *
+     * @param string $google
+     */
+    public function Google($google=false){
+        return $this->getset('dc:identifier',$google,'opf:scheme','GOOGLE');
+    }
+
+    /**
+     * Set or get the Amazon ID of the book
+     *
+     * @param string $amazon
+     */
+    public function Amazon($amazon=false){
+        return $this->getset('dc:identifier',$amazon,'opf:scheme','AMAZON');
     }
 
     public function Subjects($subjects=false){
     }
 
     public function Cover($path){
+    }
+
+    /**
+     * A simple getter/setter for simple meta attributes
+     *
+     * @param string $item   XML node to set/get
+     * @param string $value  New node value
+     * @param string $att    Attribute name
+     * @param string $aval   Attribute value
+     */
+    protected function getset($item,$value=false,$att=false,$aval=false){
+        // construct xpath
+        $xpath = '//'.$item;
+        if($att){
+            $xpath .= "[@$att=\"$aval\"]";
+        }
+
+        // set value
+        if($value){
+            $node = $this->xpath($xpath);
+            if($node){
+                $node->{0} = $value;
+            }else{
+                $this->addMeta($item,$value,array($att=>$aval));
+            }
+        }
+
+        // get value
+        $node = $this->xpath($xpath);
+        return (String) $node;
     }
 
     /**
