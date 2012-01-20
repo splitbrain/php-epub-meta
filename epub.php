@@ -44,13 +44,25 @@ class EPub {
     /**
      * Get or set the book author(s)
      *
+     * Authors should be given with a "file-as" and a real name. The file as
+     * is used for sorting in e-readers.
+     *
+     * Example:
+     *
+     * array(
+     *      'Pratchett, Terry'   => 'Terry Pratchett',
+     *      'Simpson, Jacqeline' => 'Jacqueline Simpson',
+     * )
+     *
+     * @params array $authors
      */
     public function Authors($authors=false){
         // set new data
         if($authors){
-            // A simple author name was given:
+            // Author where given as a comma separated list
             if(is_string($authors)){
-                $authors = array($authors => $authors);
+                $authors = explode(',',$authors);
+                $authors = array_map('trim',$authors);
             }
 
             if(is_array($authors)){
@@ -81,6 +93,29 @@ class EPub {
         return $authors;
     }
 
+    public function Title($title=false){
+    }
+
+    public function Language($lang=false){
+    }
+
+    public function Publisher($publisher=false){
+    }
+
+    public function Copyright($rights=false){
+    }
+
+    public function Description($description=false){
+    }
+
+    public function ISBN($isbn=false){
+    }
+
+    public function Subjects($subjects=false){
+    }
+
+    public function Cover($path){
+    }
 
     /**
      * Remove a node form the XML
