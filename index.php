@@ -101,16 +101,16 @@
                 <td><input type="text" name="subjects"  value="<?php echo htmlspecialchars(join(', ',$epub->Subjects()))?>" /></td>
             </tr>
             <tr>
-                <th>Language</th>
-                <td><p><input type="text" name="language"  value="<?php echo htmlspecialchars($epub->Language())?>" /></p></td>
-            </tr>
-            <tr>
                 <th>Publisher</th>
-                <td><p><input type="text" name="publisher" value="<?php echo htmlspecialchars($epub->Publisher())?>" /></p></td>
+                <td><input type="text" name="publisher" value="<?php echo htmlspecialchars($epub->Publisher())?>" /></td>
             </tr>
             <tr>
                 <th>Copyright</th>
-                <td><p><input type="text" name="copyright" value="<?php echo htmlspecialchars($epub->Copyright())?>" /></p></td>
+                <td><input type="text" name="copyright" value="<?php echo htmlspecialchars($epub->Copyright())?>" /></td>
+            </tr>
+            <tr>
+                <th>Language</th>
+                <td><p><input type="text" name="language"  value="<?php echo htmlspecialchars($epub->Language())?>" /></p></td>
             </tr>
             <tr>
                 <th>ISBN</th>
