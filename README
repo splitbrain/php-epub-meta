@@ -1,0 +1,10 @@
+====== PHP EPub Meta ======
+
+This project aims to create a PHP class for reading and writing metadata
+included in the EPub ebook format.
+
+It also includes a very basic web interface to edit book metadata.
+
+Please see the issue tracker for what's missing.
+
+Forks and pull requests welcome.
