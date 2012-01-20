@@ -68,7 +68,7 @@
 
     <?php if($epub): ?>
     <form action="" method="post" id="bookpanel">
-        <input type="hidden" name="book" value="<?php echo htmlspecialchars($book)?>" />
+        <input type="hidden" name="book" value="<?php echo htmlspecialchars($_REQUEST['book'])?>" />
 
         <table>
             <tr>
