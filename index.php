@@ -49,8 +49,28 @@
 <head>
     <title>e-Book Manager</title>
     <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+
+    <script type="text/javascript" src="https://raw.github.com/cleditor/cleditor/master/jquery.cleditor.js"></script>
+    <link href="https://raw.github.com/cleditor/cleditor/master/jquery.cleditor.css" rel="stylesheet" type="text/css" />
+
     <script type="text/javascript">
         <?php if($error) echo "alert('".htmlspecialchars($error)."');";?>
+
+        $(function() {
+            $('textarea').cleditor({
+                width: 465,
+                controls:     // controls to add to the toolbar
+                        "bold italic underline strikethrough subscript superscript | " +
+                        "style removeformat | bullets numbering | " +
+                        "alignleft center alignright justify | undo redo | " +
+                        "link unlink | source",
+                styles:       // styles in the style popup
+                        [["Paragraph", "<p>"], ["Header 1", "<h1>"], ["Header 2", "<h2>"],
+                        ["Header 3", "<h3>"],  ["Header 4","<h4>"],  ["Header 5","<h5>"]]
+            });
+        });
     </script>
 </head>
 <body>
