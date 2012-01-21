@@ -122,7 +122,7 @@ class EPub {
         $nodes = $this->xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
         if($nodes->length == 0){
             // no nodes where found, let's try again without role
-            $nodes = $this->xpath('//opf:metadata/dc:creator');
+            $nodes = $this->xpath->query('//opf:metadata/dc:creator');
             $rolefix = true;
         }
         foreach($nodes as $node){
@@ -299,14 +299,15 @@ class EPub {
         */
 
         // load cover
-        $node = $this->xpath('//opf:metadata/opf:meta[@name="cover"]');
-        if(!$node) return $this->no_cover();
-        $coverid = (String) $node['content'];
+        $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
+        if(!$nodes->length) return $this->no_cover();
+        $coverid = (String) $nodes->item(0)->attr('content');
         if(!$coverid) return $this->no_cover();
 
-        $node = $this->xpath('//opf:manifest/opf:item[@id="'.$coverid.'"]');
-        $mime = (String) $node['media-type'];
-        $path = (String) $node['href'];
+        $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="'.$coverid.'"]');
+        if(!$nodes->length) return $this->no_cover();
+        $mime = $nodes->item(0)->attr('media-type');
+        $path = $nodes->item(0)->attr('href');
         $path = dirname('/'.$this->meta).'/'.$path; // image path is relative to meta file
         $path = ltrim($path,'/');
 
