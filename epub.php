@@ -94,7 +94,7 @@ class EPub {
 
             if(is_array($authors)){
                 // delete existing nodes
-                $res = $this->xpath('//dc:creator[@opf:role="aut"]',false);
+                $res = $this->xpath('//opf:metadata/dc:creator[@opf:role="aut"]',false);
                 foreach($res as $r) $this->deleteNode($r);
 
                 // add new nodes
@@ -111,10 +111,10 @@ class EPub {
         // read current data
         $rolefix = false;
         $authors = array();
-        $res = $this->xpath('//dc:creator[@opf:role="aut"]',false);
+        $res = $this->xpath('//opf:metadata/dc:creator[@opf:role="aut"]',false);
         if(count($res) == 0){
             // no nodes where found, let's try again without role
-            $res = $this->xpath('//dc:creator',false);
+            $res = $this->xpath('//opf:metadata/dc:creator',false);
             $rolefix = true;
         }
         foreach($res as $r){
@@ -217,7 +217,7 @@ class EPub {
                 $subjects = array_map('trim',$subjects);
             }
 
-            $nodes = $this->xpath('//dc:subject');
+            $nodes = $this->xpath('//opf:metadata/dc:subject');
             foreach($nodes as $node){
                 $this->deleteNode($node);
             }
@@ -228,7 +228,7 @@ class EPub {
 
         //getter
         $subjects = array();
-        $nodes = $this->xpath('//dc:subject');
+        $nodes = $this->xpath('//opf:metadata/dc:subject',false);
         foreach($nodes as $node){
             $subjects[] = (String) $node;
         }
@@ -250,7 +250,7 @@ class EPub {
      */
     protected function getset($item,$value=false,$att=false,$aval=false){
         // construct xpath
-        $xpath = '//'.$item;
+        $xpath = '//opf:metadata/'.$item;
         if($att){
             $xpath .= "[@$att=\"$aval\"]";
         }
