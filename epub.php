@@ -9,6 +9,7 @@ class EPub {
     protected $file;
     protected $meta;
     protected $namespaces;
+    protected $imagetoadd='';
 
     /**
      * Constructor
@@ -67,6 +68,14 @@ class EPub {
             throw new Exception('Failed to write back metadata');
         }
         $zip->addFromString($this->meta,$this->xml->asXML());
+        // add the cover image
+        if($this->imagetoadd){
+            $path = dirname('/'.$this->meta).'/php-epub-meta.img'; // image path is relative to meta file
+            $path = ltrim($path,'/');
+
+            $zip->addFromString($path,file_get_contents($this->imagetoadd));
+            $this->imagetoadd='';
+        }
         $zip->close();
     }
 
@@ -252,7 +261,36 @@ class EPub {
      * @return array
      */
     public function Cover($path=false, $mime=false){
+        /*
+        // set cover
+        if($path !== false){
+            // remove current pointer
+            $nodes = $this->xpath('//opf:metadata/opf:meta[@name="cover"]',false);
+            foreach($nodes as $node) $this->deleteNode($node);
+            // remove previous manifest entries if they where made by us
+            $nodes = $this->xpath('//opf:manifest/opf:item[@id="php-epub-meta-cover"]',false);
+            foreach($nodes as $node) $this->deleteNode($node);
 
+            if($path){
+                // add pointer
+                $this->addMeta('opf:meta','',array(
+                                    'opf:name'    => 'cover',
+                                    'opf:content' => 'php-epub-meta-cover'
+                              ));
+
+                // add manifest
+                $parent = $this->xpath('//opf:manifest');
+                $node = $parent->addChild('opf:item','',$this->namespaces['opf']);
+                $node->addAttribute('opf:id', 'php-epub-meta-cover', $this->namespaces['opf']);
+                $node->addAttribute('opf:href', 'php-epub-meta-cover.img', $this->namespaces['opf']);
+                $node->addAttribute('opf:media-type', $mime, $this->namespaces['opf']);
+                // remember path for save action
+                $this->imagetoadd = $path;
+            }
+        }
+        */
+
+        // load cover
         $node = $this->xpath('//opf:metadata/opf:meta[@name="cover"]');
         if(!$node) return $this->no_cover();
         $coverid = (String) $node['content'];
@@ -361,19 +399,14 @@ class EPub {
      * @param array  $attributes  name/value pairs of attributes (ns prefix okay)
      */
     protected function addMeta($item, $value, $attributes=array()){
-        list($ns,$item) = explode(':',$item);
-        if(!$item){
-            $item = $ns;
-            $ns   = '';
-        }
+        $list = explode(':',$item);
+        $ns   = (count($list) ==2 ) ? $list[0] : '';
 
         $parent = $this->xpath('//opf:metadata');
         $node = $parent->addChild($item,$value,$this->namespaces[$ns]);
         foreach($attributes as $attr => $value){
-            list($ns, $item) = explode(':', $attr);
-            if(!$item){
-                $ns   = '';
-            }
+            $list = explode(':', $attr);
+            $ns   = (count($list) ==2 ) ? $list[0] : '';
             $node->addAttribute($attr,$value,$this->namespaces[$ns]);
         }
     }
