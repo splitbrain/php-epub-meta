@@ -6,6 +6,7 @@
  */
 class EPub {
     public $xml; //FIXME change to protected, later
+    protected $xpath;
     protected $file;
     protected $meta;
     protected $namespaces;
@@ -18,13 +19,6 @@ class EPub {
      * @throws Exception if metadata could not be loaded
      */
     public function __construct($file){
-        // prepare namespaces
-        $this->ns = array(
-            'n'   => 'urn:oasis:names:tc:opendocument:xmlns:container',
-            'opf' => 'http://www.idpf.org/2007/opf',
-            'dc'  => 'http://purl.org/dc/elements/1.1/'
-        );
-
         // open file
         $this->file = $file;
         $zip = new ZipArchive();
@@ -33,30 +27,26 @@ class EPub {
         }
 
         // read container data
-        $container = $zip->getFromName('META-INF/container.xml');
-        if($container == false){
+        $data = $zip->getFromName('META-INF/container.xml');
+        if($data == false){
             throw new Exception('Failed to access epub container data');
         }
         $xml = new DOMDocument();
-        $xml->loadXML($container);
-
-        $container->registerXPathNamespace('n','urn:oasis:names:tc:opendocument:xmlns:container');
-        $nodes = $container->xpath('//n:rootfiles/n:rootfile[@media-type="application/oebps-package+xml"]');
-        $this->meta = (String) $nodes[0]['full-path'];
+        $xml->registerNodeClass('DOMElement','EPubDOMElement');
+        $xml->loadXML($data);
+        $xpath = new EPubDOMXPath($xml);
+        $nodes = $xpath->query('//n:rootfiles/n:rootfile[@media-type="application/oebps-package+xml"]');
+        $this->meta = $nodes->item(0)->attr('full-path');
 
         // load metadata
-        $xml = $zip->getFromName($this->meta);
-        if(!$xml){
+        $data = $zip->getFromName($this->meta);
+        if(!$data){
             throw new Exception('Failed to access epub metadata');
         }
-        $this->xml = new SimpleXMLElement($xml);
-
-        $this->namespaces = array_merge($ns,$this->xml->getDocNamespaces(true));
-
-
-        foreach($this->namespaces as $ns => $url){
-            $this->xml->registerXPathNamespace($ns,$url);
-        }
+        $this->xml =  new DOMDocument();
+        $this->xml->registerNodeClass('DOMElement','EPubDOMElement');
+        $this->xml->loadXML($data);
+        $this->xpath = new EPubDOMXPath($this->xml);
 
         $zip->close();
     }
@@ -337,62 +327,39 @@ class EPub {
 
         // set value
         if($value !== false){
-            $node = $this->xpath($xpath);
-
-            if(is_array($node)){
-                // there are multiple matching nodes for some reason
-                // we'll replace them all with our own single one
-                // this will also be run if xcode returns an empty array
-                foreach($node as $n) $this->deleteNode($n);
-                if($att){
-                    $this->addMeta($item,$value,array($att=>$aval));
+            $nodes = $this->xpath->query($xpath);
+            if($nodes->length == 1 ){
+                if($value === ''){
+                    // the user want's to empty this value -> delete the node
+                    $nodes->item(0)->delete();
                 }else{
-                    $this->addMeta($item,$value);
+                    // replace value
+                    $nodes->item(0)->nodeValue = $value;
                 }
-            }elseif($value === ''){
-                // the user want's to empty this value -> delete the node
-                $this->deleteNode($node);
             }else{
-                // replace value
-                $node->{0} = $value;
+                // if there are multiple matching nodes for some reason delete
+                // them. we'll replace them all with our own single one
+                foreach($nodes as $n) $n->delete();
+                // readd them
+                if($value){
+                    $node = new EPubDomElement($item,$value);
+                    if($att) $node->attr($att,$aval);
+                    $parent = $this->xpath->query('//opf:metadata')->item(0);
+                    $parent->appendChild($node);
+                }
             }
         }
 
         // get value
-        $node = $this->xpath($xpath);
-        if($node){
-            return (String) $node;
+        $nodes = $this->xpath->query($xpath);
+        if($nodes->length){
+            return $nodes->item(0)->nodeValue;
         }else{
             return '';
         }
     }
 
-    /**
-     * Remove a node form the XML
-     *
-     * @link http://www.kavoir.com/2008/12/how-to-delete-remove-nodes-in-simplexml.html#comment-2694
-     */
-    protected function deleteNode(SimpleXMLElement $node){
-        $oNode = dom_import_simplexml($node);
-        $oNode->parentNode->removeChild($oNode);
-    }
 
-    /**
-     * Fetch Item(s) via xpath expression
-     *
-     * Namespaces are already correctly registered.
-     *
-     * @param string $xpath  the xpath expression
-     * @param bool   $simple return a SimpleXMLElement instead of Array if only one hit
-     */
-    protected function xpath($xpath, $simple=true){
-        $result = $this->xml->xpath($xpath);
-        if($simple && is_array($result) && count($result) === 1){
-            return $result[0];
-        }else{
-            return $result;
-        }
-    }
 
     /**
      * Add a new metadata node
@@ -464,4 +431,88 @@ class EPub {
         );
     }
 }
+
+class EPubDOMXPath extends DOMXPath {
+    public function __construct(DOMDocument $doc){
+        parent::__construct($doc);
+
+        if(is_a($doc->documentElement, 'EPubDOMElement')){
+            foreach($doc->documentElement->namespaces as $ns => $url){
+                $this->registerNamespace($ns,$url);
+            }
+        }
+    }
+}
+
+class EPubDOMElement extends DOMElement {
+    public $namespaces = array(
+        ''    => '',
+        'n'   => 'urn:oasis:names:tc:opendocument:xmlns:container',
+        'opf' => 'http://www.idpf.org/2007/opf',
+        'dc'  => 'http://purl.org/dc/elements/1.1/'
+    );
+
+
+    public function __construct($name, $value='', $namespaceURI=''){
+        list($ns,$name) = $this->splitns($name);
+        if(!$namespaceURI && $ns){
+            $namespaceURI = $this->namespaces($ns);
+        }
+
+        parent::__construct($name, $value, $namespaceURI);
+    }
+
+    /**
+     * Split given name in namespace prefix and local part
+     *
+     * @param  string $name
+     * @return array  (namespace, name)
+     */
+    public function splitns($name){
+        $list = explode(':',$name,2);
+        if(count($list) <= 2) array_unshift($list,'');
+        return $list;
+    }
+
+    /**
+     * Simple EPub namespace aware attribute accessor
+     */
+    public function attr($attr,$value=null){
+        list($ns,$attr) = $this->splitns($attr);
+
+        if(!is_null($value)){
+            if($value === false){
+                // delete if false was given
+                if($ns){
+                    $this->removeAttributeNS($this->namespaces[$ns],$attr);
+                }else{
+                    $this->removeAttribute($attr);
+                }
+            }else{
+                // modify if value was given
+                if($ns){
+                    $this->setAttributeNS($this->namespaces[$ns],$attr,$value);
+                }else{
+                    $this->setAttribute($attr,$value);
+                }
+            }
+        }else{
+            // return value if none was given
+            if($ns){
+                return $this->getAttributeNS($this->namespaces[$ns],$attr);
+            }else{
+                return $this->getAttribute($attr);
+            }
+        }
+    }
+
+    /**
+     * Remove this node from the DOM
+     */
+    public function delete(){
+        $this->parentNode->removeChild($this);
+    }
+
+}
+
 
