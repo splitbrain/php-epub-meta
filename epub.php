@@ -89,47 +89,51 @@ class EPub {
      */
     public function Authors($authors=false){
         // set new data
-        if($authors){
+        if($authors !== false){
             // Author where given as a comma separated list
             if(is_string($authors)){
-                $authors = explode(',',$authors);
-                $authors = array_map('trim',$authors);
+                if($authors == ''){
+                    $authors = array();
+                }else{
+                    $authors = explode(',',$authors);
+                    $authors = array_map('trim',$authors);
+                }
             }
 
-            if(is_array($authors)){
-                // delete existing nodes
-                $res = $this->xpath('//opf:metadata/dc:creator[@opf:role="aut"]',false);
-                foreach($res as $r) $this->deleteNode($r);
+            // delete existing nodes
+            $nodes = $this->xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
+            foreach($nodes as $node) $node->delete();
 
-                // add new nodes
-                foreach($authors as $as => $name){
-                    if(is_int($as)) $as = $name; //numeric array given
-                    $this->addMeta('dc:creator',$name,array(
-                                        'opf:role'    => 'aut',
-                                        'opf:file-as' => $as
-                                  ));
-                }
+            // add new nodes
+            $parent = $this->xpath->query('//opf:metadata')->item(0);
+            foreach($authors as $as => $name){
+                if(is_int($as)) $as = $name; //numeric array given
+
+                $node = new EPubDomElement('dc:creator',$name);
+                $node = $parent->appendChild($node);
+                $node->attr('opf:role', 'aut');
+                $node->attr('opf:file-as', $as);
             }
         }
 
         // read current data
         $rolefix = false;
         $authors = array();
-        $res = $this->xpath('//opf:metadata/dc:creator[@opf:role="aut"]',false);
-        if(count($res) == 0){
+        $nodes = $this->xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
+        if($nodes->length == 0){
             // no nodes where found, let's try again without role
-            $res = $this->xpath('//opf:metadata/dc:creator',false);
+            $nodes = $this->xpath('//opf:metadata/dc:creator');
             $rolefix = true;
         }
-        foreach($res as $r){
-            $name = (String) $r;
-            $as   = (String) $this->readAttribute($r,'opf','file-as');
+        foreach($nodes as $node){
+            $name = $node->nodeValue;
+            $as   = $node->attr('opf:file-as');
             if(!$as){
                 $as = $name;
-                $r->addAttribute('opf:file-as',$as,$this->namespaces['opf']);
+                $node->attr('opf:file-as',$as);
             }
             if($rolefix){
-                $r->addAttribute('opf:role','aut',$this->namespaces['opf']);
+                $node->attr('opf:role','aut');
             }
             $authors[$as] = $name;
         }
@@ -228,14 +232,16 @@ class EPub {
                 }
             }
 
+            // delete previous
             $nodes = $this->xpath->query('//opf:metadata/dc:subject');
             foreach($nodes as $node){
                 $node->delete();
             }
+            // add new ones
             $parent = $this->xpath->query('//opf:metadata')->item(0);
             foreach($subjects as $subj){
                 $node = new EPubDomElement('dc:subject',$subj);
-                $parent->appendChild($node);
+                $node = $parent->appendChild($node);
             }
         }
 
@@ -352,8 +358,8 @@ class EPub {
                 // readd them
                 if($value){
                     $parent = $this->xpath->query('//opf:metadata')->item(0);
-                    $parent->appendChild($node);
-                    $node = new EPubDomElement($item,$value);
+                    $node   = new EPubDomElement($item,$value);
+                    $node   = $parent->appendChild($node);
                     if($att) $node->attr($att,$aval);
                 }
             }
