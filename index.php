@@ -10,15 +10,17 @@
     header('Content-Type: text/html; charset=utf-8');
 
     require('epub.php');
-    try{
-        $book = $_REQUEST['book'];
-        $book = str_replace('..','',$book); // no upper dirs, lowers might be supported later
-        $epub = new EPub($bookdir.$book.'.epub');
-    }catch (Exception $e){
-        $error = $e->getMessage();
+    if(isset($_REQUEST['book'])){
+        try{
+            $book = $_REQUEST['book'];
+            $book = str_replace('..','',$book); // no upper dirs, lowers might be supported later
+            $epub = new EPub($bookdir.$book.'.epub');
+        }catch (Exception $e){
+            $error = $e->getMessage();
+        }
     }
 
-    if($_REQUEST['save']){
+    if($_REQUEST['save'] && isset($epub)){
         $epub->Title($_POST['title']);
         $epub->Description($_POST['description']);
         $epub->Language($_POST['language']);
