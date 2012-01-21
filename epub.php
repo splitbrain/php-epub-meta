@@ -211,30 +211,39 @@ class EPub {
     /**
      * Set or get the book's subjects (aka. tags)
      *
+     * Subject should be given as array, but a comma separated string will also
+     * be accepted.
+     *
      * @param array $subjects
      */
     public function Subjects($subjects=false){
         // setter
-        if($subjects){
+        if($subjects !== false){
             if(is_string($subjects)){
-                $subjects = explode(',',$subjects);
-                $subjects = array_map('trim',$subjects);
+                if($subjects === ''){
+                    $subjects = array();
+                }else{
+                    $subjects = explode(',',$subjects);
+                    $subjects = array_map('trim',$subjects);
+                }
             }
 
-            $nodes = $this->xpath('//opf:metadata/dc:subject');
+            $nodes = $this->xpath->query('//opf:metadata/dc:subject');
             foreach($nodes as $node){
-                $this->deleteNode($node);
+                $node->delete();
             }
+            $parent = $this->xpath->query('//opf:metadata')->item(0);
             foreach($subjects as $subj){
-                $this->addMeta('dc:subject',$subj);
+                $node = new EPubDomElement('dc:subject',$subj);
+                $parent->appendChild($node);
             }
         }
 
         //getter
         $subjects = array();
-        $nodes = $this->xpath('//opf:metadata/dc:subject',false);
+        $nodes = $this->xpath->query('//opf:metadata/dc:subject');
         foreach($nodes as $node){
-            $subjects[] = (String) $node;
+            $subjects[] =  $node->nodeValue;
         }
         return $subjects;
     }
@@ -342,10 +351,10 @@ class EPub {
                 foreach($nodes as $n) $n->delete();
                 // readd them
                 if($value){
-                    $node = new EPubDomElement($item,$value);
-                    if($att) $node->attr($att,$aval);
                     $parent = $this->xpath->query('//opf:metadata')->item(0);
                     $parent->appendChild($node);
+                    $node = new EPubDomElement($item,$value);
+                    if($att) $node->attr($att,$aval);
                 }
             }
         }
@@ -456,7 +465,7 @@ class EPubDOMElement extends DOMElement {
     public function __construct($name, $value='', $namespaceURI=''){
         list($ns,$name) = $this->splitns($name);
         if(!$namespaceURI && $ns){
-            $namespaceURI = $this->namespaces($ns);
+            $namespaceURI = $this->namespaces[$ns];
         }
 
         parent::__construct($name, $value, $namespaceURI);
@@ -470,7 +479,7 @@ class EPubDOMElement extends DOMElement {
      */
     public function splitns($name){
         $list = explode(':',$name,2);
-        if(count($list) <= 2) array_unshift($list,'');
+        if(count($list) < 2) array_unshift($list,'');
         return $list;
     }
 
