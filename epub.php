@@ -60,7 +60,7 @@ class EPub {
         if($res === false){
             throw new Exception('Failed to write back metadata');
         }
-        $zip->addFromString($this->meta,$this->xml->asXML());
+        $zip->addFromString($this->meta,$this->xml->saveXML());
         // add the cover image
         if($this->imagetoadd){
             $path = dirname('/'.$this->meta).'/php-epub-meta.img'; // image path is relative to meta file
