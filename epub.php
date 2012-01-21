@@ -328,7 +328,8 @@ class EPub {
             $ns   = '';
         }
 
-        $node = $this->xml->metadata->addChild($item,$value,$this->namespaces[$ns]);
+        $parent = $this->xpath('//opf:metadata');
+        $node = $parent->addChild($item,$value,$this->namespaces[$ns]);
         foreach($attributes as $attr => $value){
             list($ns, $item) = explode(':', $attr);
             if(!$item){
@@ -348,7 +349,8 @@ class EPub {
      * @return SimpleXMLElement
      */
     protected function getMeta($ns, $item=''){
-        $childs = $this->xml->metadata->children($this->namespaces[$ns]);
+        $parent = $this->xpath('//opf:metadata');
+        $childs = $parent->children($this->namespaces[$ns]);
         if($item){
             return $childs->$item;
         }else{
