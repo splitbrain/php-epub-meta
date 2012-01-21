@@ -20,7 +20,7 @@ class EPub {
         // open file
         $this->file = $file;
         $zip = new ZipArchive();
-        if(!$zip->open($this->file)){
+        if(!@$zip->open($this->file)){
             throw new Exception('Failed to read epub file');
         }
 
@@ -53,6 +53,8 @@ class EPub {
         foreach($this->namespaces as $ns => $url){
             $this->xml->registerXPathNamespace($ns,$url);
         }
+
+        $zip->close();
     }
 
     /**
@@ -235,7 +237,44 @@ class EPub {
         return $subjects;
     }
 
-    public function Cover($path){
+    /**
+     * Read the cover data
+     *
+     * Returns an associative array with the following keys:
+     *
+     *   mime  - filetype (usually image/jpeg)
+     *   data  - the binary image data
+     *   found - the internal path, or false if no image is set in epub
+     *
+     * When no image is set in the epub file, the binary data for a transparent
+     * GIF pixel is returned.
+     *
+     * @return array
+     */
+    public function Cover($path=false, $mime=false){
+
+        $node = $this->xpath('//opf:metadata/opf:meta[@name="cover"]');
+        if(!$node) return $this->no_cover();
+        $coverid = (String) $node['content'];
+        if(!$coverid) return $this->no_cover();
+
+        $node = $this->xpath('//opf:manifest/opf:item[@id="'.$coverid.'"]');
+        $mime = (String) $node['media-type'];
+        $path = (String) $node['href'];
+        $path = dirname('/'.$this->meta).'/'.$path; // image path is relative to meta file
+        $path = ltrim($path,'/');
+
+        $zip = new ZipArchive();
+        if(!@$zip->open($this->file)){
+            throw new Exception('Failed to read epub file');
+        }
+        $data = $zip->getFromName($path);
+
+        return array(
+            'mime'  => $mime,
+            'data'  => $data,
+            'found' => $path
+        );
     }
 
     /**
@@ -378,5 +417,15 @@ class EPub {
         }
     }
 
+    /**
+     * Return a not found response for Cover()
+     */
+    protected function no_cover(){
+        return array(
+            'data'  => base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAEALAAAAAABAAEAAAIBTAA7'),
+            'mime'  => 'image/gif',
+            'found' => false
+        );
+    }
 }
 

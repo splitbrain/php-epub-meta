@@ -3,11 +3,7 @@
     $bookdir = '/home/andi/Dropbox/ebooks/';
 
 
-
-
-
     error_reporting(E_ALL ^ E_NOTICE);
-    header('Content-Type: text/html; charset=utf-8');
 
     require('epub.php');
     if(isset($_REQUEST['book'])){
@@ -19,6 +15,14 @@
             $error = $e->getMessage();
         }
     }
+
+    if(isset($_REQUEST['img']) && isset($epub)){
+        $img = $epub->Cover();
+        header('Content-Type: '.$img['mime']);
+        echo $img['data'];
+        exit;
+    }
+
 
     if($_REQUEST['save'] && isset($epub)){
         $epub->Title($_POST['title']);
@@ -46,6 +50,7 @@
         }
     }
 
+    header('Content-Type: text/html; charset=utf-8');
 ?>
 <html>
 <head>
@@ -115,7 +120,9 @@
                 </td>
             </tr>
             <tr>
-                <th>Description</th>
+                <th>Description<br />
+                    <img src="?book=<?php echo htmlspecialchars($_REQUEST['book'])?>&amp;img=1" id="cover" width="90" />
+                </th>
                 <td><textarea name="description"><?php echo htmlspecialchars($epub->Description())?></textarea></td>
             </tr>
             <tr>
