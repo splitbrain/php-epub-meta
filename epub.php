@@ -374,67 +374,6 @@ class EPub {
         }
     }
 
-
-
-    /**
-     * Add a new metadata node
-     *
-     * @param string $item        name of the new node (can be ns prefixed)
-     * @param string $value       value of the new node
-     * @param array  $attributes  name/value pairs of attributes (ns prefix okay)
-     */
-    protected function addMeta($item, $value, $attributes=array()){
-        $list = explode(':',$item);
-        $ns   = (count($list) ==2 ) ? $list[0] : '';
-
-        $parent = $this->xpath('//opf:metadata');
-        $node = $parent->addChild($item,$value,$this->namespaces[$ns]);
-        foreach($attributes as $attr => $value){
-            $list = explode(':', $attr);
-            $ns   = (count($list) ==2 ) ? $list[0] : '';
-            $node->addAttribute($attr,$value,$this->namespaces[$ns]);
-        }
-    }
-
-    /**
-     * Fetch Item
-     *
-     * If no item name is given all items from the given namespace are returned
-     *
-     * @param string $ns   namespace prefix
-     * @param string $item the name of the item to retrieve
-     * @return SimpleXMLElement
-     */
-    protected function getMeta($ns, $item=''){
-        $parent = $this->xpath('//opf:metadata');
-        $childs = $parent->children($this->namespaces[$ns]);
-        if($item){
-            return $childs->$item;
-        }else{
-            return $childs;
-        }
-    }
-
-    /*
-     * Read attributes from a given item
-     *
-     * If no attribute name is given all all attributes from the given namespace
-     * are returned
-     *
-     * @param SimpleXMLElement $node
-     * @param string $ns namespace prefix
-     * @param string $attribute the name of the attribute to retrieve
-     * @return SimpleXMLElement
-     */
-    protected function readAttribute(SimpleXMLElement $node, $ns, $attribute=''){
-        $attrs = $node->attributes($this->namespaces[$ns]);
-        if($attribute){
-            return $attrs->$attribute;
-        }else{
-            return $attrs;
-        }
-    }
-
     /**
      * Return a not found response for Cover()
      */
