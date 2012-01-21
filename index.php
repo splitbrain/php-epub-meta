@@ -3,22 +3,28 @@
     $bookdir = '/home/andi/Dropbox/ebooks/';
 
 
-
-
-
     error_reporting(E_ALL ^ E_NOTICE);
-    header('Content-Type: text/html; charset=utf-8');
 
     require('epub.php');
-    try{
-        $book = $_REQUEST['book'];
-        $book = str_replace('..','',$book); // no upper dirs, lowers might be supported later
-        $epub = new EPub($bookdir.$book.'.epub');
-    }catch (Exception $e){
-        $error = $e->getMessage();
+    if(isset($_REQUEST['book'])){
+        try{
+            $book = $_REQUEST['book'];
+            $book = str_replace('..','',$book); // no upper dirs, lowers might be supported later
+            $epub = new EPub($bookdir.$book.'.epub');
+        }catch (Exception $e){
+            $error = $e->getMessage();
+        }
     }
 
-    if($_REQUEST['save']){
+    if(isset($_REQUEST['img']) && isset($epub)){
+        $img = $epub->Cover();
+        header('Content-Type: '.$img['mime']);
+        echo $img['data'];
+        exit;
+    }
+
+
+    if($_REQUEST['save'] && isset($epub)){
         $epub->Title($_POST['title']);
         $epub->Description($_POST['description']);
         $epub->Language($_POST['language']);
@@ -44,6 +50,7 @@
         }
     }
 
+    header('Content-Type: text/html; charset=utf-8');
 ?>
 <html>
 <head>
@@ -113,7 +120,9 @@
                 </td>
             </tr>
             <tr>
-                <th>Description</th>
+                <th>Description<br />
+                    <img src="?book=<?php echo htmlspecialchars($_REQUEST['book'])?>&amp;img=1" id="cover" width="90" />
+                </th>
                 <td><textarea name="description"><?php echo htmlspecialchars($epub->Description())?></textarea></td>
             </tr>
             <tr>

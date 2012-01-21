@@ -9,6 +9,7 @@ class EPub {
     protected $file;
     protected $meta;
     protected $namespaces;
+    protected $imagetoadd='';
 
     /**
      * Constructor
@@ -27,7 +28,7 @@ class EPub {
         // open file
         $this->file = $file;
         $zip = new ZipArchive();
-        if(!$zip->open($this->file)){
+        if(!@$zip->open($this->file)){
             throw new Exception('Failed to read epub file');
         }
 
@@ -56,6 +57,8 @@ class EPub {
         foreach($this->namespaces as $ns => $url){
             $this->xml->registerXPathNamespace($ns,$url);
         }
+
+        $zip->close();
     }
 
     /**
@@ -68,6 +71,14 @@ class EPub {
             throw new Exception('Failed to write back metadata');
         }
         $zip->addFromString($this->meta,$this->xml->asXML());
+        // add the cover image
+        if($this->imagetoadd){
+            $path = dirname('/'.$this->meta).'/php-epub-meta.img'; // image path is relative to meta file
+            $path = ltrim($path,'/');
+
+            $zip->addFromString($path,file_get_contents($this->imagetoadd));
+            $this->imagetoadd='';
+        }
         $zip->close();
     }
 
@@ -97,7 +108,7 @@ class EPub {
 
             if(is_array($authors)){
                 // delete existing nodes
-                $res = $this->xpath('//dc:creator[@opf:role="aut"]',false);
+                $res = $this->xpath('//opf:metadata/dc:creator[@opf:role="aut"]',false);
                 foreach($res as $r) $this->deleteNode($r);
 
                 // add new nodes
@@ -114,10 +125,10 @@ class EPub {
         // read current data
         $rolefix = false;
         $authors = array();
-        $res = $this->xpath('//dc:creator[@opf:role="aut"]',false);
+        $res = $this->xpath('//opf:metadata/dc:creator[@opf:role="aut"]',false);
         if(count($res) == 0){
             // no nodes where found, let's try again without role
-            $res = $this->xpath('//dc:creator',false);
+            $res = $this->xpath('//opf:metadata/dc:creator',false);
             $rolefix = true;
         }
         foreach($res as $r){
@@ -220,7 +231,7 @@ class EPub {
                 $subjects = array_map('trim',$subjects);
             }
 
-            $nodes = $this->xpath('//dc:subject');
+            $nodes = $this->xpath('//opf:metadata/dc:subject');
             foreach($nodes as $node){
                 $this->deleteNode($node);
             }
@@ -231,14 +242,80 @@ class EPub {
 
         //getter
         $subjects = array();
-        $nodes = $this->xpath('//dc:subject');
+        $nodes = $this->xpath('//opf:metadata/dc:subject',false);
         foreach($nodes as $node){
             $subjects[] = (String) $node;
         }
         return $subjects;
     }
 
-    public function Cover($path){
+    /**
+     * Read the cover data
+     *
+     * Returns an associative array with the following keys:
+     *
+     *   mime  - filetype (usually image/jpeg)
+     *   data  - the binary image data
+     *   found - the internal path, or false if no image is set in epub
+     *
+     * When no image is set in the epub file, the binary data for a transparent
+     * GIF pixel is returned.
+     *
+     * @return array
+     */
+    public function Cover($path=false, $mime=false){
+        /*
+        // set cover
+        if($path !== false){
+            // remove current pointer
+            $nodes = $this->xpath('//opf:metadata/opf:meta[@name="cover"]',false);
+            foreach($nodes as $node) $this->deleteNode($node);
+            // remove previous manifest entries if they where made by us
+            $nodes = $this->xpath('//opf:manifest/opf:item[@id="php-epub-meta-cover"]',false);
+            foreach($nodes as $node) $this->deleteNode($node);
+
+            if($path){
+                // add pointer
+                $this->addMeta('opf:meta','',array(
+                                    'opf:name'    => 'cover',
+                                    'opf:content' => 'php-epub-meta-cover'
+                              ));
+
+                // add manifest
+                $parent = $this->xpath('//opf:manifest');
+                $node = $parent->addChild('opf:item','',$this->namespaces['opf']);
+                $node->addAttribute('opf:id', 'php-epub-meta-cover', $this->namespaces['opf']);
+                $node->addAttribute('opf:href', 'php-epub-meta-cover.img', $this->namespaces['opf']);
+                $node->addAttribute('opf:media-type', $mime, $this->namespaces['opf']);
+                // remember path for save action
+                $this->imagetoadd = $path;
+            }
+        }
+        */
+
+        // load cover
+        $node = $this->xpath('//opf:metadata/opf:meta[@name="cover"]');
+        if(!$node) return $this->no_cover();
+        $coverid = (String) $node['content'];
+        if(!$coverid) return $this->no_cover();
+
+        $node = $this->xpath('//opf:manifest/opf:item[@id="'.$coverid.'"]');
+        $mime = (String) $node['media-type'];
+        $path = (String) $node['href'];
+        $path = dirname('/'.$this->meta).'/'.$path; // image path is relative to meta file
+        $path = ltrim($path,'/');
+
+        $zip = new ZipArchive();
+        if(!@$zip->open($this->file)){
+            throw new Exception('Failed to read epub file');
+        }
+        $data = $zip->getFromName($path);
+
+        return array(
+            'mime'  => $mime,
+            'data'  => $data,
+            'found' => $path
+        );
     }
 
     /**
@@ -253,7 +330,7 @@ class EPub {
      */
     protected function getset($item,$value=false,$att=false,$aval=false){
         // construct xpath
-        $xpath = '//'.$item;
+        $xpath = '//opf:metadata/'.$item;
         if($att){
             $xpath .= "[@$att=\"$aval\"]";
         }
@@ -325,18 +402,14 @@ class EPub {
      * @param array  $attributes  name/value pairs of attributes (ns prefix okay)
      */
     protected function addMeta($item, $value, $attributes=array()){
-        list($ns,$item) = explode(':',$item);
-        if(!$item){
-            $item = $ns;
-            $ns   = '';
-        }
+        $list = explode(':',$item);
+        $ns   = (count($list) ==2 ) ? $list[0] : '';
 
-        $node = $this->xml->metadata->addChild($item,$value,$this->namespaces[$ns]);
+        $parent = $this->xpath('//opf:metadata');
+        $node = $parent->addChild($item,$value,$this->namespaces[$ns]);
         foreach($attributes as $attr => $value){
-            list($ns, $item) = explode(':', $attr);
-            if(!$item){
-                $ns   = '';
-            }
+            $list = explode(':', $attr);
+            $ns   = (count($list) ==2 ) ? $list[0] : '';
             $node->addAttribute($attr,$value,$this->namespaces[$ns]);
         }
     }
@@ -351,7 +424,8 @@ class EPub {
      * @return SimpleXMLElement
      */
     protected function getMeta($ns, $item=''){
-        $childs = $this->xml->metadata->children($this->namespaces[$ns]);
+        $parent = $this->xpath('//opf:metadata');
+        $childs = $parent->children($this->namespaces[$ns]);
         if($item){
             return $childs->$item;
         }else{
@@ -379,5 +453,15 @@ class EPub {
         }
     }
 
+    /**
+     * Return a not found response for Cover()
+     */
+    protected function no_cover(){
+        return array(
+            'data'  => base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAEALAAAAAABAAEAAAIBTAA7'),
+            'mime'  => 'image/gif',
+            'found' => false
+        );
+    }
 }
 
