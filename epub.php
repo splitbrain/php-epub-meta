@@ -17,6 +17,13 @@ class EPub {
      * @throws Exception if metadata could not be loaded
      */
     public function __construct($file){
+        // prepare namespaces
+        $this->ns = array(
+            'n'   => 'urn:oasis:names:tc:opendocument:xmlns:container',
+            'opf' => 'http://www.idpf.org/2007/opf',
+            'dc'  => 'http://purl.org/dc/elements/1.1/'
+        );
+
         // open file
         $this->file = $file;
         $zip = new ZipArchive();
@@ -29,7 +36,9 @@ class EPub {
         if($container == false){
             throw new Exception('Failed to access epub container data');
         }
-        $container = new SimpleXMLElement($container);
+        $xml = new DOMDocument();
+        $xml->loadXML($container);
+
         $container->registerXPathNamespace('n','urn:oasis:names:tc:opendocument:xmlns:container');
         $nodes = $container->xpath('//n:rootfiles/n:rootfile[@media-type="application/oebps-package+xml"]');
         $this->meta = (String) $nodes[0]['full-path'];
@@ -41,12 +50,6 @@ class EPub {
         }
         $this->xml = new SimpleXMLElement($xml);
 
-        // register namespaces
-        $ns = array(
-            '' => 'http://www.idpf.org/2007/opf',
-            'opf' => 'http://www.idpf.org/2007/opf',
-            'dc'  => 'http://purl.org/dc/elements/1.1/'
-        );
         $this->namespaces = array_merge($ns,$this->xml->getDocNamespaces(true));
 
 
