@@ -109,12 +109,12 @@ class EPub {
             $parent = $this->xpath->query('//opf:metadata')->item(0);
             foreach($authors as $as => $name){
                 if(is_int($as)) $as = $name; //numeric array given
-
-                $node = $this->xml->createElement('dc:creator',$name);
-                $node = $parent->appendChild($node);
+                $node = $parent->newChild('dc:creator',$name);
                 $node->attr('opf:role', 'aut');
                 $node->attr('opf:file-as', $as);
             }
+
+            $this->reparse();
         }
 
         // read current data
@@ -244,6 +244,8 @@ class EPub {
                 $node = $this->xml->createElement('dc:subject',$subj);
                 $node = $parent->appendChild($node);
             }
+
+            $this->reparse();
         }
 
         //getter
@@ -364,6 +366,8 @@ class EPub {
                     if($att) $node->attr($att,$aval);
                 }
             }
+
+            $this->reparse();
         }
 
         // get value
@@ -384,6 +388,17 @@ class EPub {
             'mime'  => 'image/gif',
             'found' => false
         );
+    }
+
+    /**
+     * Reparse the DOM tree
+     *
+     * I had to rely on this because otherwise xpath failed to find the newly
+     * added nodes
+     */
+    protected function reparse() {
+        $this->xml->loadXML($this->xml->saveXML());
+        $this->xpath = new EPubDOMXPath($this->xml);
     }
 }
 
@@ -453,7 +468,7 @@ class EPubDOMElement extends DOMElement {
         $nsuri = '';
         if($ns){
             $nsuri = $this->namespaces[$ns];
-            if($this->isDefaultNamespace($nsuri)) $nsuri = '';
+            if($this->namespaceURI == $nsuri) $nsuri = '';
         }
 
         if(!is_null($value)){
