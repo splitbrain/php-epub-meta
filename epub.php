@@ -46,6 +46,7 @@ class EPub {
         $this->xml =  new DOMDocument();
         $this->xml->registerNodeClass('DOMElement','EPubDOMElement');
         $this->xml->loadXML($data);
+        $this->xml->formatOutput = true;
         $this->xpath = new EPubDOMXPath($this->xml);
 
         $zip->close();
@@ -109,7 +110,7 @@ class EPub {
             foreach($authors as $as => $name){
                 if(is_int($as)) $as = $name; //numeric array given
 
-                $node = new EPubDomElement('dc:creator',$name);
+                $node = $this->xml->createElement('dc:creator',$name);
                 $node = $parent->appendChild($node);
                 $node->attr('opf:role', 'aut');
                 $node->attr('opf:file-as', $as);
@@ -240,7 +241,7 @@ class EPub {
             // add new ones
             $parent = $this->xpath->query('//opf:metadata')->item(0);
             foreach($subjects as $subj){
-                $node = new EPubDomElement('dc:subject',$subj);
+                $node = $this->xml->createElement('dc:subject',$subj);
                 $node = $parent->appendChild($node);
             }
         }
@@ -269,34 +270,33 @@ class EPub {
      * @return array
      */
     public function Cover($path=false, $mime=false){
-        /*
         // set cover
         if($path !== false){
             // remove current pointer
-            $nodes = $this->xpath('//opf:metadata/opf:meta[@name="cover"]',false);
-            foreach($nodes as $node) $this->deleteNode($node);
+            $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
+            foreach($nodes as $node) $node->delete();
             // remove previous manifest entries if they where made by us
-            $nodes = $this->xpath('//opf:manifest/opf:item[@id="php-epub-meta-cover"]',false);
-            foreach($nodes as $node) $this->deleteNode($node);
+            $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="php-epub-meta-cover"]');
+            foreach($nodes as $node) $node->delete();
 
             if($path){
                 // add pointer
-                $this->addMeta('opf:meta','',array(
-                                    'opf:name'    => 'cover',
-                                    'opf:content' => 'php-epub-meta-cover'
-                              ));
+                $parent = $this->xpath->query('//opf:metadata')->item(0);
+                $node = $parent->newChild('opf:meta');
+                $node->attr('opf:name','cover');
+                $node->attr('opf:content','php-epub-meta-cover');
 
                 // add manifest
-                $parent = $this->xpath('//opf:manifest');
-                $node = $parent->addChild('opf:item','',$this->namespaces['opf']);
-                $node->addAttribute('opf:id', 'php-epub-meta-cover', $this->namespaces['opf']);
-                $node->addAttribute('opf:href', 'php-epub-meta-cover.img', $this->namespaces['opf']);
-                $node->addAttribute('opf:media-type', $mime, $this->namespaces['opf']);
+                $parent = $this->xpath->query('//opf:manifest')->item(0);
+                $node = $parent->newChild('opf:item');
+                $node->attr('id','php-epub-meta-cover');
+                $node->attr('opf:href','php-epub-meta-cover.img');
+                $node->attr('opf:media-type',$mime);
+
                 // remember path for save action
                 $this->imagetoadd = $path;
             }
         }
-        */
 
         // load cover
         $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
@@ -359,7 +359,7 @@ class EPub {
                 // readd them
                 if($value){
                     $parent = $this->xpath->query('//opf:metadata')->item(0);
-                    $node   = new EPubDomElement($item,$value);
+                    $node   = $this->xml->createElement($item,$value);
                     $node   = $parent->appendChild($node);
                     if($att) $node->attr($att,$aval);
                 }
@@ -401,7 +401,6 @@ class EPubDOMXPath extends DOMXPath {
 
 class EPubDOMElement extends DOMElement {
     public $namespaces = array(
-        ''    => '',
         'n'   => 'urn:oasis:names:tc:opendocument:xmlns:container',
         'opf' => 'http://www.idpf.org/2007/opf',
         'dc'  => 'http://purl.org/dc/elements/1.1/'
@@ -415,6 +414,22 @@ class EPubDOMElement extends DOMElement {
         }
 
         parent::__construct($name, $value, $namespaceURI);
+    }
+
+    /**
+     * Create and append a new child
+     *
+     * Works with our epub namespaces and omits default namespaces
+     */
+    public function newChild($name, $value=''){
+        list($ns,$local) = $this->splitns($name);
+        if($ns){
+            $nsuri = $this->namespaces[$ns];
+            if($this->isDefaultNamespace($nsuri)) $name = $local;
+        }
+
+        $node = $this->ownerDocument->createElement($name,$value);
+        return $this->appendChild($node);
     }
 
     /**
@@ -435,18 +450,24 @@ class EPubDOMElement extends DOMElement {
     public function attr($attr,$value=null){
         list($ns,$attr) = $this->splitns($attr);
 
+        $nsuri = '';
+        if($ns){
+            $nsuri = $this->namespaces[$ns];
+            if($this->isDefaultNamespace($nsuri)) $nsuri = '';
+        }
+
         if(!is_null($value)){
             if($value === false){
                 // delete if false was given
-                if($ns){
-                    $this->removeAttributeNS($this->namespaces[$ns],$attr);
+                if($nsuri){
+                    $this->removeAttributeNS($nsuri,$attr);
                 }else{
                     $this->removeAttribute($attr);
                 }
             }else{
                 // modify if value was given
-                if($ns){
-                    $this->setAttributeNS($this->namespaces[$ns],$attr,$value);
+                if($nsuri){
+                    $this->setAttributeNS($nsuri,$attr,$value);
                 }else{
                     $this->setAttribute($attr,$value);
                 }
