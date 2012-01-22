@@ -440,10 +440,14 @@ class EPubDOMElement extends DOMElement {
         list($ns,$local) = $this->splitns($name);
         if($ns){
             $nsuri = $this->namespaces[$ns];
-            if($this->isDefaultNamespace($nsuri)) $name = $local;
+            if($this->isDefaultNamespace($nsuri)){
+                $name  = $local;
+                $nsuri = '';
+            }
         }
 
-        $node = $this->ownerDocument->createElement($name,$value);
+        // this doesn't call the construcor: $node = $this->ownerDocument->createElement($name,$value);
+        $node = new EPubDOMElement($name,$value,$nsuri);
         return $this->appendChild($node);
     }
 
@@ -468,7 +472,13 @@ class EPubDOMElement extends DOMElement {
         $nsuri = '';
         if($ns){
             $nsuri = $this->namespaces[$ns];
-            if($this->namespaceURI == $nsuri) $nsuri = '';
+            if(!$this->namespaceURI){
+                if($this->isDefaultNamespace($nsuri)){
+                    $nsuri = '';
+                }
+            }elseif($this->namespaceURI == $nsuri){
+                 $nsuri = '';
+            }
         }
 
         if(!is_null($value)){
