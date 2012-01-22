@@ -64,7 +64,7 @@ class EPub {
         $zip->addFromString($this->meta,$this->xml->saveXML());
         // add the cover image
         if($this->imagetoadd){
-            $path = dirname('/'.$this->meta).'/php-epub-meta.img'; // image path is relative to meta file
+            $path = dirname('/'.$this->meta).'/php-epub-meta-cover.img'; // image path is relative to meta file
             $path = ltrim($path,'/');
 
             $zip->addFromString($path,file_get_contents($this->imagetoadd));
@@ -269,6 +269,12 @@ class EPub {
      * When no image is set in the epub file, the binary data for a transparent
      * GIF pixel is returned.
      *
+     * When adding a new image this function return no or old data because the
+     * image contents are not in the epub file, yet. The image will be added when
+     * the save() method is called.
+     *
+     * @param  string $path local filesystem path to a new cover image
+     * @param  string $mime mime type of the given file
      * @return array
      */
     public function Cover($path=false, $mime=false){
@@ -298,18 +304,20 @@ class EPub {
                 // remember path for save action
                 $this->imagetoadd = $path;
             }
+
+            $this->reparse();
         }
 
         // load cover
         $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
         if(!$nodes->length) return $this->no_cover();
-        $coverid = (String) $nodes->item(0)->attr('content');
+        $coverid = (String) $nodes->item(0)->attr('opf:content');
         if(!$coverid) return $this->no_cover();
 
         $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="'.$coverid.'"]');
         if(!$nodes->length) return $this->no_cover();
-        $mime = $nodes->item(0)->attr('media-type');
-        $path = $nodes->item(0)->attr('href');
+        $mime = $nodes->item(0)->attr('opf:media-type');
+        $path = $nodes->item(0)->attr('opf:href');
         $path = dirname('/'.$this->meta).'/'.$path; // image path is relative to meta file
         $path = ltrim($path,'/');
 
@@ -427,9 +435,9 @@ class EPubDOMElement extends DOMElement {
         if(!$namespaceURI && $ns){
             $namespaceURI = $this->namespaces[$ns];
         }
-
         parent::__construct($name, $value, $namespaceURI);
     }
+
 
     /**
      * Create and append a new child
@@ -499,8 +507,8 @@ class EPubDOMElement extends DOMElement {
             }
         }else{
             // return value if none was given
-            if($ns){
-                return $this->getAttributeNS($this->namespaces[$ns],$attr);
+            if($nsuri){
+                return $this->getAttributeNS($nsuri,$attr);
             }else{
                 return $this->getAttribute($attr);
             }
