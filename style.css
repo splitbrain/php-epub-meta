@@ -91,3 +91,47 @@ table td input:focus {
 table th img {
     margin-top: 20px;
 }
+
+
+
+#bookapi-q {
+    width: 600px;
+}
+
+#bookapi {
+    font-size: 12px;
+}
+
+#bookapi div.head {
+    margin-bottom: 10px;
+}
+
+#bookapi div.result {
+    clear: both;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+    min-height: 130px;
+}
+
+#bookapi div.result div {
+    margin-left: 70px;
+}
+
+#bookapi div.result div.buttons {
+    float: right;
+    text-align: right;
+}
+
+#bookapi img {
+    margin-top: 30px;
+    width: 60px;
+    float: left;
+}
+
+#bookapi h1.title {
+    font-size: 14px;
+}
+
+#bookapi span.subjects {
+    font-style: italic;
+}

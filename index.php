@@ -5,6 +5,14 @@
 
     error_reporting(E_ALL ^ E_NOTICE);
 
+    // proxy google requests
+    if(isset($_GET['api'])){
+        header('application/json; charset=UTF-8');
+        echo file_get_contents('https://www.googleapis.com/books/v1/volumes?q='.rawurlencode($_GET['api']).'&maxResults=25');
+        exit;
+    }
+
+    // load epub data
     require('epub.php');
     if(isset($_REQUEST['book'])){
         try{
@@ -16,6 +24,7 @@
         }
     }
 
+    // return image data
     if(isset($_REQUEST['img']) && isset($epub)){
         $img = $epub->Cover();
         header('Content-Type: '.$img['mime']);
@@ -23,7 +32,7 @@
         exit;
     }
 
-
+    // save epub data
     if($_REQUEST['save'] && isset($epub)){
         $epub->Title($_POST['title']);
         $epub->Description($_POST['description']);
@@ -57,10 +66,14 @@
     <title>e-Book Manager</title>
     <link href="style.css" rel="stylesheet" type="text/css" />
 
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js"></script>
+    <link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css" />
 
     <script type="text/javascript" src="https://raw.github.com/cleditor/cleditor/master/jquery.cleditor.js"></script>
     <link href="https://raw.github.com/cleditor/cleditor/master/jquery.cleditor.css" rel="stylesheet" type="text/css" />
+
+    <script type="text/javascript" src="script.js"></script>
 
     <script type="text/javascript">
         <?php if($error) echo "alert('".htmlspecialchars($error)."');";?>
