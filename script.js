@@ -132,9 +132,32 @@ var bookapi = {
             $('#bookpanel input[name=subjects]').val(item.categories.join(', '));
     }
 
-}
+};
 
+var author = {
+    init: function(){
+        $button = $(document.createElement('a'));
+        $button.text('+').attr('href','#');
+        $button.click(author.add);
+        $button.addClass('addauthor');
+
+        $td = $('#authors');
+        $td.append($button);
+    },
+
+    add: function(){
+        $td  = $('#authors');
+
+        $ps  = $td.find('p');
+        $new = $ps.first().clone();
+        $new.find('input').first().attr('name','authorname['+$ps.length+']').val('');
+        $new.find('input').last().attr('name','authoras['+$ps.length+']').val('');
+
+        $ps.last().after($new);
+    }
+};
 
 $(function(){
     bookapi.init();
+    author.init();
 });

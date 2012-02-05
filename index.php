@@ -118,7 +118,7 @@
             </tr>
             <tr>
                 <th>Authors</th>
-                <td>
+                <td id="authors">
                     <?php
                         $count = 0;
                         foreach($epub->Authors() as $as => $name){
