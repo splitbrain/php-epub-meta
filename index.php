@@ -8,7 +8,7 @@
     // proxy google requests
     if(isset($_GET['api'])){
         header('application/json; charset=UTF-8');
-        echo file_get_contents('https://www.googleapis.com/books/v1/volumes?q='.rawurlencode($_GET['api']).'&maxResults=25');
+        echo file_get_contents('https://www.googleapis.com/books/v1/volumes?q='.rawurlencode($_GET['api']).'&maxResults=25&printType=books&projection=full');
         exit;
     }
 
@@ -78,8 +78,9 @@
     <script type="text/javascript">
         <?php if($error) echo "alert('".htmlspecialchars($error)."');";?>
 
+        var $wysiwg = null;
         $(function() {
-            $('textarea').cleditor({
+                $wysiwyg = $('textarea').cleditor({
                 width: 465,
                 controls:     // controls to add to the toolbar
                         "bold italic underline strikethrough subscript superscript | " +

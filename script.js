@@ -102,12 +102,12 @@ var bookapi = {
 
     replace: function(event){
         item = event.data;
-        console.dir(event);
 
         if(item.title)
             $('#bookpanel input[name=title]').val(item.title);
         if(item.description)
-            $('#bookpanel input[name=description]').val(item.description); //FIXME work with WYSIWYG
+            $('#bookpanel textarea[name=description]').val(item.description);
+            $wysiwyg[0].updateFrame();
         if(item.language)
             $('#bookpanel input[name=language]').val(item.language);
         if(item.publisher)
@@ -116,8 +116,20 @@ var bookapi = {
             $('#bookpanel input[name=subjects]').val(item.categories.join(', '));
     },
 
-    fillin: function(i){
+    fillin: function(event){
         item = event.data;
+
+        if(item.title && $('#bookpanel input[name=title]').val() == '')
+            $('#bookpanel input[name=title]').val(item.title);
+        if(item.description && $('#bookpanel textarea[name=description]').val() == '')
+            $('#bookpanel textarea[name=description]').val(item.description);
+            $wysiwyg[0].updateFrame();
+        if(item.language && $('#bookpanel input[name=language]').val() == '')
+            $('#bookpanel input[name=language]').val(item.language);
+        if(item.publisher && $('#bookpanel input[name=publisher]').val() == '')
+            $('#bookpanel input[name=publisher]').val(item.publisher);
+        if(item.categories && $('#bookpanel input[name=subjects]').val() == '')
+            $('#bookpanel input[name=subjects]').val(item.categories.join(', '));
     }
 
 }
