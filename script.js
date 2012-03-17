@@ -117,6 +117,7 @@ var bookapi = {
             $('#bookpanel input[name=coverurl]').val(item.imageLinks.thumbnail);
             $('#cover').attr('src',item.imageLinks.thumbnail);
         }
+        bookapi.$dialog.dialog('close');
     },
 
     fillin: function(event){
@@ -137,6 +138,7 @@ var bookapi = {
             $('#bookpanel input[name=coverurl]').val(item.imageLinks.thumbnail);
             $('#cover').attr('src',item.imageLinks.thumbnail);
         }
+        bookapi.$dialog.dialog('close');
     }
 
 };
