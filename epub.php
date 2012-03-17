@@ -53,6 +53,13 @@ class EPub {
     }
 
     /**
+     * file name getter
+     */
+    public function file(){
+        return $this->file;
+    }
+
+    /**
      * Writes back all meta data changes
      */
     public function save(){
