@@ -160,7 +160,8 @@
             </tr>
             <tr>
                 <th>Description<br />
-                    <img src="?book=<?php echo htmlspecialchars($_REQUEST['book'])?>&amp;img=1" id="cover" width="90" />
+                    <img src="?book=<?php echo htmlspecialchars($_REQUEST['book'])?>&amp;img=1" id="cover" width="90"
+                         class="<?php $c = $epub->Cover(); echo ($c['found']?'hasimg':'noimg')?>" />
                 </th>
                 <td><textarea name="description"><?php echo htmlspecialchars($epub->Description())?></textarea></td>
             </tr>

@@ -102,7 +102,6 @@ var bookapi = {
 
     replace: function(event){
         item = event.data;
-
         if(item.title)
             $('#bookpanel input[name=title]').val(item.title);
         if(item.description)
@@ -114,6 +113,10 @@ var bookapi = {
             $('#bookpanel input[name=publisher]').val(item.publisher);
         if(item.categories)
             $('#bookpanel input[name=subjects]').val(item.categories.join(', '));
+        if(item.imageLinks){
+            $('#bookpanel input[name=coverurl]').val(item.imageLinks.thumbnail);
+            $('#cover').attr('src',item.imageLinks.thumbnail);
+        }
     },
 
     fillin: function(event){
@@ -130,6 +133,10 @@ var bookapi = {
             $('#bookpanel input[name=publisher]').val(item.publisher);
         if(item.categories && $('#bookpanel input[name=subjects]').val() == '')
             $('#bookpanel input[name=subjects]').val(item.categories.join(', '));
+        if(item.imageLinks && $('#cover').hasClass('noimg')){
+            $('#bookpanel input[name=coverurl]').val(item.imageLinks.thumbnail);
+            $('#cover').attr('src',item.imageLinks.thumbnail);
+        }
     }
 
 };
