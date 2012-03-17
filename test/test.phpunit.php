@@ -1,6 +1,6 @@
 <?php
 
-require 'epub.php';
+require '../epub.php';
 
 
 class EPubTest extends PHPUnit_Framework_TestCase {

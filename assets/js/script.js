@@ -166,12 +166,27 @@ var author = {
     }
 };
 
+var $wysiwg = null;
 $(function(){
     bookapi.init();
     author.init();
 
+    // scroll to currently selected book
     $current = $('#booklist li.active');
     if($current.length){
          $current[0].scrollIntoView();
     }
+
+    // initialize the WYSIWYG editor
+    $wysiwyg = $('textarea').cleditor({
+        width: 465,
+        controls:     // controls to add to the toolbar
+                "bold italic underline strikethrough subscript superscript | " +
+                "style removeformat | bullets numbering | " +
+                "alignleft center alignright justify | undo redo | " +
+                "link unlink | source",
+        styles:       // styles in the style popup
+                [["Paragraph", "<p>"], ["Header 1", "<h1>"], ["Header 2", "<h2>"],
+                ["Header 3", "<h3>"],  ["Header 4","<h4>"],  ["Header 5","<h5>"]]
+    });
 });

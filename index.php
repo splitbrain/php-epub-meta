@@ -104,34 +104,13 @@
 <html>
 <head>
     <title>e-Book Manager</title>
-    <link href="style.css" rel="stylesheet" type="text/css" />
 
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js"></script>
-    <link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css" />
-
-    <script type="text/javascript" src="https://raw.github.com/cleditor/cleditor/master/jquery.cleditor.js"></script>
-    <link href="https://raw.github.com/cleditor/cleditor/master/jquery.cleditor.css" rel="stylesheet" type="text/css" />
-
-    <script type="text/javascript" src="script.js"></script>
+    <link rel="stylesheet" type="text/css" href="assets/css/smoothness/jquery-ui-1.8.18.custom.css" />
+    <link rel="stylesheet" type="text/css" href="assets/css/cleditor/jquery.cleditor.css" />
+    <link rel="stylesheet" type="text/css" href="assets/css/style.css" />
 
     <script type="text/javascript">
         <?php if($error) echo "alert('".htmlspecialchars($error)."');";?>
-
-        var $wysiwg = null;
-        $(function() {
-                $wysiwyg = $('textarea').cleditor({
-                width: 465,
-                controls:     // controls to add to the toolbar
-                        "bold italic underline strikethrough subscript superscript | " +
-                        "style removeformat | bullets numbering | " +
-                        "alignleft center alignright justify | undo redo | " +
-                        "link unlink | source",
-                styles:       // styles in the style popup
-                        [["Paragraph", "<p>"], ["Header 1", "<h1>"], ["Header 2", "<h2>"],
-                        ["Header 3", "<h3>"],  ["Header 4","<h4>"],  ["Header 5","<h5>"]]
-            });
-        });
     </script>
 </head>
 <body>
@@ -215,6 +194,12 @@
         </div>
     </form>
     <?php endif; ?>
+
+    <!-- load at the end, for faster site load -->
+    <script type="text/javascript" src="assets/js/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="assets/js/jquery-ui-1.8.18.custom.min.js"></script>
+    <script type="text/javascript" src="assets/js/jquery.cleditor.min.js"></script>
+    <script type="text/javascript" src="assets/js/script.js"></script>
 
 </div>
 </body>
