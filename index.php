@@ -102,7 +102,9 @@
             $list = glob($bookdir.'/*.epub');
             foreach($list as $book){
                 $base = basename($book,'.epub');
-                echo '<li><a href="?book='.htmlspecialchars($base).'">'.htmlspecialchars($base).'</a></li>';
+                echo '<li '.($base == $_REQUEST['book'] ? 'class="active"' : '' ).'>';
+                echo '<a href="?book='.htmlspecialchars($base).'">'.htmlspecialchars($base).'</a>';
+                echo '</li>';
             }
         ?>
     </ul>

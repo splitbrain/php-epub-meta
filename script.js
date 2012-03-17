@@ -160,4 +160,9 @@ var author = {
 $(function(){
     bookapi.init();
     author.init();
+
+    $current = $('#booklist li.active');
+    if($current.length){
+         $current[0].scrollIntoView();
+    }
 });

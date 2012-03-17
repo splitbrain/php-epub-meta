@@ -34,8 +34,19 @@ a:active {
 }
 
 #booklist li {
-    margin: 5px;
+    padding: 5px;
 }
+
+#booklist li.active {
+    background-color: #4183C4;
+}
+#booklist li.active a,
+#booklist li.active a:hover,
+#booklist li.active a:active {
+    color: #efefef;
+    background-color: #4183C4;
+}
+
 
 #bookpanel {
     float: left;
