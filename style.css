@@ -37,6 +37,18 @@ a:active {
     padding: 5px;
 }
 
+#booklist li:hover {
+    background-color: #efefef;
+}
+
+#booklist li span {
+    display: block;
+}
+#booklist li span.author {
+    padding-left: 5px;
+    font-size: 11px;
+}
+
 #booklist li.active {
     background-color: #4183C4;
 }

@@ -12,6 +12,8 @@
         exit;
     }
 
+    require('util.php');
+
     // load epub data
     require('epub.php');
     if(isset($_REQUEST['book'])){
@@ -73,13 +75,28 @@
             }
         }
 
+        // save the ebook
         try{
             $epub->save();
         }catch(Exception $e){
             $error = $e->getMessage();
         }
 
+        // clean up temporary cover file
         if($cover) @unlink($cover);
+
+        // rename
+        $author = array_shift(array_keys($epub->Authors()));
+        $title  = $epub->Title();
+        $new    = to_file($author.'-'.$title);
+        $new    = $bookdir.$new.'.epub';
+        $old    = $epub->file();
+        if(realpath($new) != realpath($old)){
+            if(!@rename($old,$new)) $new = $old; //rename failed, stay here
+        }
+        $go = basename($new,'.epub');
+        header('Location: ?book='.rawurlencode($go));
+        exit;
     }
 
     header('Content-Type: text/html; charset=utf-8');
@@ -125,8 +142,9 @@
             $list = glob($bookdir.'/*.epub');
             foreach($list as $book){
                 $base = basename($book,'.epub');
+                $name = book_output($base);
                 echo '<li '.($base == $_REQUEST['book'] ? 'class="active"' : '' ).'>';
-                echo '<a href="?book='.htmlspecialchars($base).'">'.htmlspecialchars($base).'</a>';
+                echo '<a href="?book='.htmlspecialchars($base).'">'.$name.'</a>';
                 echo '</li>';
             }
         ?>
