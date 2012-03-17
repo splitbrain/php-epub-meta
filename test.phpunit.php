@@ -80,6 +80,12 @@ class EPubTest extends PHPUnit_Framework_TestCase {
             $this->epub->Authors(array('Doe, John' => 'John Doe', 'Smith, Jane' => 'Jane Smith')),
             array('Doe, John' => 'John Doe', 'Smith, Jane' => 'Jane Smith')
         );
+
+        // check escaping
+        $this->assertEquals(
+            $this->epub->Authors(array('Doe, John&nbsp;' => 'John Doe&nbsp;')),
+            array('Doe, John&nbsp;' => 'John Doe&nbsp;')
+        );
     }
 
     public function testTitle(){
@@ -105,6 +111,12 @@ class EPubTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(
             $this->epub->Title('Foo Bar'),
             'Foo Bar'
+        );
+
+        // check escaping
+        $this->assertEquals(
+            $this->epub->Title('Foo&nbsp;Bar'),
+            'Foo&nbsp;Bar'
         );
     }
 
@@ -137,6 +149,12 @@ class EPubTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(
             $this->epub->Subjects(array('Fiction','Drama','Romance')),
             array('Fiction','Drama','Romance')
+        );
+
+        // check escaping
+        $this->assertEquals(
+            $this->epub->Subjects(array('Fiction','Drama&nbsp;','Romance')),
+            array('Fiction','Drama&nbsp;','Romance')
         );
     }
 

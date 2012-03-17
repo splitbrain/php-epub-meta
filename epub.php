@@ -248,7 +248,7 @@ class EPub {
             // add new ones
             $parent = $this->xpath->query('//opf:metadata')->item(0);
             foreach($subjects as $subj){
-                $node = $this->xml->createElement('dc:subject',$subj);
+                $node = $this->xml->createElement('dc:subject',htmlspecialchars($subj));
                 $node = $parent->appendChild($node);
             }
 
@@ -360,6 +360,7 @@ class EPub {
 
         // set value
         if($value !== false){
+            $value = htmlspecialchars($value);
             $nodes = $this->xpath->query($xpath);
             if($nodes->length == 1 ){
                 if($value === ''){
@@ -439,6 +440,7 @@ class EPubDOMElement extends DOMElement {
 
     public function __construct($name, $value='', $namespaceURI=''){
         list($ns,$name) = $this->splitns($name);
+        $value = htmlspecialchars($value);
         if(!$namespaceURI && $ns){
             $namespaceURI = $this->namespaces[$ns];
         }
