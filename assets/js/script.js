@@ -36,7 +36,7 @@ var bookapi = {
                        .append('<div id="bookapi-out"></div>');
         bookapi.$out = $('#bookapi-out');
 
-        $('#bookpanel').append('<div id="bookapi-s">Search</div>');
+        $('#bookpanel').append('<a href="#" id="bookapi-s">Lookup Book Data</a>');
         $('#bookapi-s').click(bookapi.open);
 
         $('#bookapi-q').keypress(

@@ -183,16 +183,24 @@
                 <td><p><input type="text" name="isbn"      value="<?php echo htmlspecialchars($epub->ISBN())?>" /></p></td>
             </tr>
             <tr>
-                <th>Cover-Image</th>
+                <th>Cover Image</th>
                 <td><p>
                     <input type="file" name="coverfile" />
-                    or URL: <input type="text" name="coverurl" value="" />
+                    URL: <input type="text" name="coverurl" value="" />
                 </p></td>
         </table>
         <div class="center">
             <input name="save" type="submit" />
         </div>
     </form>
+    <?php else: ?>
+    <H1>e-Book Manager</H1>
+
+    <p>View and edit epub books stored in <code><?php echo htmlspecialchars($bookdir)?></code>.</p>
+    <div class="license">
+    <p><?php echo str_replace("\n\n",'</p><p>',htmlspecialchars(file_get_contents('LICENSE'))) ?></p>
+    </div>
+
     <?php endif; ?>
 
     <!-- load at the end, for faster site load -->
