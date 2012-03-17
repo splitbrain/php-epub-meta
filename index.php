@@ -52,11 +52,34 @@
         }
         $epub->Authors($authors);
 
+        // handle image
+        $cover = '';
+        if(preg_match('/^https?:\/\//i',$_POST['coverurl'])){
+            $data = @file_get_contents($_POST['coverurl']);
+            if($data){
+                $cover = tempnam(sys_get_temp_dir(), 'epubcover');
+                file_put_contents($cover,$data);
+                unset($data);
+            }
+        }elseif(is_uploaded_file($_FILES['coverfile']['tmp_name'])){
+            $cover = $_FILES['coverfile']['tmp_name'];
+        }
+        if($cover){
+            $info = @getimagesize($cover);
+            if(preg_match('/^image\/(gif|jpe?g|png)$/',$info['mime'])){
+                $epub->Cover($cover,$info['meta']);
+            }else{
+                $error = "Not a valid image file".$cover;
+            }
+        }
+
         try{
             $epub->save();
         }catch(Exception $e){
             $error = $e->getMessage();
         }
+
+        if($cover) @unlink($cover);
     }
 
     header('Content-Type: text/html; charset=utf-8');
@@ -110,7 +133,7 @@
     </ul>
 
     <?php if($epub): ?>
-    <form action="" method="post" id="bookpanel">
+    <form action="" method="post" id="bookpanel" enctype="multipart/form-data">
         <input type="hidden" name="book" value="<?php echo htmlspecialchars($_REQUEST['book'])?>" />
 
         <table>
@@ -161,6 +184,12 @@
                 <th>ISBN</th>
                 <td><p><input type="text" name="isbn"      value="<?php echo htmlspecialchars($epub->ISBN())?>" /></p></td>
             </tr>
+            <tr>
+                <th>Cover-Image</th>
+                <td><p>
+                    <input type="file" name="coverfile" />
+                    or URL: <input type="text" name="coverurl" value="" />
+                </p></td>
         </table>
         <div class="center">
             <input name="save" type="submit" />
