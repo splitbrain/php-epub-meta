@@ -37,6 +37,7 @@ var bookapi = {
         bookapi.$out = $('#bookapi-out');
 
         $('#bookpanel').append('<a href="#" id="bookapi-s">Lookup Book Data</a>');
+        $('#bookapi-s').attr('title','Search this book at Google Books');
         $('#bookapi-s').click(bookapi.open);
 
         $('#bookapi-q').keypress(
@@ -147,6 +148,7 @@ var author = {
     init: function(){
         $button = $(document.createElement('a'));
         $button.text('+').attr('href','#');
+        $button.attr('title','add another author line');
         $button.click(author.add);
         $button.addClass('addauthor');
 
@@ -179,9 +181,9 @@ $(function(){
 
     // initialize the WYSIWYG editor
     $wysiwyg = $('textarea').cleditor({
-        width: 465,
+        width: 450,
         controls:     // controls to add to the toolbar
-                "bold italic underline strikethrough subscript superscript | " +
+                "bold italic underline strikethrough | " +
                 "style removeformat | bullets numbering | " +
                 "alignleft center alignright justify | undo redo | " +
                 "link unlink | source",

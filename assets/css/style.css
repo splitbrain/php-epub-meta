@@ -15,7 +15,7 @@ a:active {
 }
 
 #wrapper {
-    height: 600px;
+    height: 95%;
     width:  920px;
     margin: auto;
     padding: 0;
@@ -25,7 +25,7 @@ a:active {
 #booklist {
     float: left;
     width: 300px;
-    height: 600px;
+    height: 100%;
     overflow: auto;
     list-style-type: none;
     padding: 0;
@@ -63,7 +63,7 @@ a:active {
 #bookpanel {
     float: left;
     width: 590px;
-    height: 600px;
+    height: 100%;
     overflow: auto;
 }
 
@@ -121,6 +121,11 @@ table td input:focus {
 
 table th img {
     margin-top: 20px;
+}
+
+a.addauthor {
+    margin-top: -20px;
+    float: right;
 }
 
 div.license {

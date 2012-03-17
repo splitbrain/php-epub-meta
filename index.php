@@ -103,7 +103,7 @@
 ?>
 <html>
 <head>
-    <title>e-Book Manager</title>
+    <title>EPub Manager</title>
 
     <link rel="stylesheet" type="text/css" href="assets/css/smoothness/jquery-ui-1.8.18.custom.css" />
     <link rel="stylesheet" type="text/css" href="assets/css/cleditor/jquery.cleditor.css" />
@@ -194,7 +194,7 @@
         </div>
     </form>
     <?php else: ?>
-    <H1>e-Book Manager</H1>
+    <h1>EPub Manager</h1>
 
     <p>View and edit epub books stored in <code><?php echo htmlspecialchars($bookdir)?></code>.</p>
     <div class="license">
