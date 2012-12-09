@@ -4,11 +4,17 @@
  *
  * @author Andreas Gohr <andi@splitbrain.org>
  */
+ 
+require_once('tbszip.php');
+
+define ("METADATA_FILE", "META-INF/container.xml");
+ 
 class EPub {
     public $xml; //FIXME change to protected, later
     protected $xpath;
     protected $file;
     protected $meta;
+    protected $zip;
     protected $namespaces;
     protected $imagetoadd='';
 
@@ -21,13 +27,17 @@ class EPub {
     public function __construct($file){
         // open file
         $this->file = $file;
-        $zip = new ZipArchive();
-        if(!@$zip->open($this->file)){
+        $this->zip = new clsTbsZip();
+        if(!$this->zip->Open($this->file)){
             throw new Exception('Failed to read epub file');
         }
 
         // read container data
-        $data = $zip->getFromName('META-INF/container.xml');
+        if (!$this->zip->FileExists(METADATA_FILE)) {
+            throw new Exception ("Unable to find metadata.xml");
+        }
+        
+        $data = $this->zip->FileRead(METADATA_FILE);
         if($data == false){
             throw new Exception('Failed to access epub container data');
         }
@@ -39,7 +49,11 @@ class EPub {
         $this->meta = $nodes->item(0)->attr('full-path');
 
         // load metadata
-        $data = $zip->getFromName($this->meta);
+        if (!$this->zip->FileExists($this->meta)) {
+            throw new Exception ("Unable to find " . $this->meta);
+        }
+        
+        $data = $this->zip->FileRead($this->meta);
         if(!$data){
             throw new Exception('Failed to access epub metadata');
         }
@@ -48,8 +62,6 @@ class EPub {
         $this->xml->loadXML($data);
         $this->xml->formatOutput = true;
         $this->xpath = new EPubDOMXPath($this->xml);
-
-        $zip->close();
     }
 
     /**
@@ -58,9 +70,19 @@ class EPub {
     public function file(){
         return $this->file;
     }
+    
+    /**
+     * Close the epub file
+     */
+    public function close (){
+        $this->zip->FileCancelModif($this->meta)
+        // TODO : Add cancelation of cover image
+        $this->zip->Close ();
+    }
 
     /**
      * Writes back all meta data changes
+     * TODO update
      */
     public function save(){
         $zip = new ZipArchive();
@@ -79,6 +101,24 @@ class EPub {
         }
         $zip->close();
     }
+    
+    /**
+     * Get the updated epub
+     */
+    public function download($file){
+        $this->zip->FileReplace($this->meta,$this->xml->saveXML());
+        // add the cover image
+        if($this->imagetoadd){
+            $path = dirname('/'.$this->meta).'/php-epub-meta-cover.img'; // image path is relative to meta file
+            $path = ltrim($path,'/');
+
+            $this->zip->FileReplace($path,file_get_contents($this->imagetoadd));
+            $this->imagetoadd='';
+        }
+        $this->zip->Flush(TBSZIP_DOWNLOAD, $file);
+    }
+    
+    
 
     /**
      * Get or set the book author(s)
