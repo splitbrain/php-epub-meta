@@ -75,7 +75,7 @@ class EPub {
      * Close the epub file
      */
     public function close (){
-        $this->zip->FileCancelModif($this->meta)
+        $this->zip->FileCancelModif($this->meta);
         // TODO : Add cancelation of cover image
         $this->zip->Close ();
     }
@@ -261,6 +261,24 @@ class EPub {
     }
 
     /**
+     * Set or get the Serie of the book
+     *
+     * @param string $serie
+     */
+    public function Serie($serie=false){
+        return $this->getset('opf:meta',$serie,'opf:name','calibre:series','opf:content');
+    }
+    
+    /**
+     * Set or get the Serie Index of the book
+     *
+     * @param string $serieIndex
+     */
+    public function SerieIndex($serieIndex=false){
+        return $this->getset('meta',$serieIndex,'opf:name','calibre:series_index','opf:content');
+    }
+    
+    /**
      * Set or get the book's subjects (aka. tags)
      *
      * Subject should be given as array, but a comma separated string will also
@@ -390,8 +408,9 @@ class EPub {
      * @param string $value  New node value
      * @param string $att    Attribute name
      * @param string $aval   Attribute value
+     * @param string $datt   Destination attribute
      */
-    protected function getset($item,$value=false,$att=false,$aval=false){
+    protected function getset($item,$value=false,$att=false,$aval=false,$datt=false){
         // construct xpath
         $xpath = '//opf:metadata/'.$item;
         if($att){
@@ -408,7 +427,11 @@ class EPub {
                     $nodes->item(0)->delete();
                 }else{
                     // replace value
-                    $nodes->item(0)->nodeValue = $value;
+                    if ($datt){
+                        $nodes->item(0)->attr ($datt, $value);
+                    }else{
+                        $nodes->item(0)->nodeValue = $value;
+                    }
                 }
             }else{
                 // if there are multiple matching nodes for some reason delete
@@ -417,9 +440,14 @@ class EPub {
                 // readd them
                 if($value){
                     $parent = $this->xpath->query('//opf:metadata')->item(0);
-                    $node   = $this->xml->createElement($item,$value);
+                    $node   = $this->xml->createElement($item);
                     $node   = $parent->appendChild($node);
                     if($att) $node->attr($att,$aval);
+                    if ($datt){
+                        $node->attr ($datt, $value);
+                    }else{
+                        $node->nodeValue = $value;
+                    }
                 }
             }
 
@@ -429,7 +457,11 @@ class EPub {
         // get value
         $nodes = $this->xpath->query($xpath);
         if($nodes->length){
-            return $nodes->item(0)->nodeValue;
+            if ($datt){
+                return $nodes->item(0)->attr ($datt);
+            }else{
+                return $nodes->item(0)->nodeValue;
+            }
         }else{
             return '';
         }
