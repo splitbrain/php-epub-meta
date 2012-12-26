@@ -266,7 +266,7 @@ class EPub {
      * @param string $serie
      */
     public function Serie($serie=false){
-        return $this->getset('opf:meta',$serie,'opf:name','calibre:series','opf:content');
+        return $this->getset('opf:meta',$serie,'name','calibre:series','content');
     }
     
     /**
@@ -275,7 +275,7 @@ class EPub {
      * @param string $serieIndex
      */
     public function SerieIndex($serieIndex=false){
-        return $this->getset('meta',$serieIndex,'opf:name','calibre:series_index','opf:content');
+        return $this->getset('opf:meta',$serieIndex,'name','calibre:series_index','content');
     }
     
     /**
@@ -440,8 +440,8 @@ class EPub {
                 // readd them
                 if($value){
                     $parent = $this->xpath->query('//opf:metadata')->item(0);
-                    $node   = $this->xml->createElement($item);
-                    $node   = $parent->appendChild($node);
+
+                    $node = $parent->newChild ($item);
                     if($att) $node->attr($att,$aval);
                     if ($datt){
                         $node->attr ($datt, $value);
