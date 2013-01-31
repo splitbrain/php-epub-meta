@@ -15,6 +15,7 @@ class EPub {
     protected $file;
     protected $meta;
     protected $zip;
+    protected $coverpath='';
     protected $namespaces;
     protected $imagetoadd='';
 
@@ -405,6 +406,61 @@ class EPub {
             'mime'  => $mime,
             'data'  => $data,
             'found' => $path
+        );
+    }
+    
+    
+    public function Cover2($path=false, $mime=false){
+        $hascover = true;
+        $item;
+        // load cover
+        $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
+        if(!$nodes->length){
+            $hascover = false;
+        } else{
+            $coverid = (String) $nodes->item(0)->attr('opf:content');
+            if(!$coverid){
+            $hascover = false;
+            } else{
+                $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="'.$coverid.'"]');
+                if(!$nodes->length){
+                    $hascover = false;
+                } else{
+                    $item = $nodes->item(0);
+                    $mime = $item->attr('opf:media-type');
+                    $this->coverpath = $item->attr('opf:href');
+                    $this->coverpath = dirname('/'.$this->meta).'/'.$this->coverpath; // image path is relative to meta file
+                    $this->coverpath = ltrim($this->coverpath,'/');
+                }
+            }
+        }
+        
+        // set cover
+        if($path !== false){
+            if (!$hascover) return; // TODO For now only update
+
+            if($path){
+                $item->attr('opf:media-type',$mime);
+
+                // remember path for save action
+                $this->imagetoadd = $path;
+            }
+
+            $this->reparse();
+        }
+        
+        if (!$hascover) return $this->no_cover();
+
+        $zip = new ZipArchive();
+        if(!@$zip->open($this->file)){
+            throw new Exception('Failed to read epub file');
+        }
+        $data = $zip->getFromName($this->coverpath);
+
+        return array(
+            'mime'  => $mime,
+            'data'  => $data,
+            'found' => $this->coverpath
         );
     }
 
