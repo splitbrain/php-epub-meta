@@ -86,37 +86,21 @@ class EPub {
      * TODO update
      */
     public function save(){
-        $zip = new ZipArchive();
-        $res = @$zip->open($this->file, ZipArchive::CREATE);
-        if($res === false){
-            throw new Exception('Failed to write back metadata');
-        }
-        $zip->addFromString($this->meta,$this->xml->saveXML());
-        // add the cover image
-        if($this->imagetoadd){
-            $path = dirname('/'.$this->meta).'/php-epub-meta-cover.img'; // image path is relative to meta file
-            $path = ltrim($path,'/');
-
-            $zip->addFromString($path,file_get_contents($this->imagetoadd));
-            $this->imagetoadd='';
-        }
+        $this->download ();
         $zip->close();
     }
     
     /**
      * Get the updated epub
      */
-    public function download($file){
+    public function download($file=false){
         $this->zip->FileReplace($this->meta,$this->xml->saveXML());
         // add the cover image
         if($this->imagetoadd){
-            $path = dirname('/'.$this->meta).'/php-epub-meta-cover.img'; // image path is relative to meta file
-            $path = ltrim($path,'/');
-
-            $this->zip->FileReplace($path,file_get_contents($this->imagetoadd));
+            $this->zip->FileReplace($this->coverpath,file_get_contents($this->imagetoadd));
             $this->imagetoadd='';
         }
-        $this->zip->Flush(TBSZIP_DOWNLOAD, $file);
+        if ($file) $this->zip->Flush(TBSZIP_DOWNLOAD, $file);
     }
     
     
