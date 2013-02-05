@@ -406,6 +406,13 @@ class EPub {
         return $nodes->item(0);
     }
     
+    public function updateForKepub () {
+        $item = $this->getCoverItem ();
+        if (!is_null ($item)) {
+            $item->attr('opf:properties', 'cover-image');
+        }
+    }
+    
     public function Cover2($path=false, $mime=false){
         $hascover = true;
         $item = $this->getCoverItem ();
