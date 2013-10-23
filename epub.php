@@ -197,7 +197,7 @@ class EPub {
      *
      * array(
      *      'Pratchett, Terry'   => 'Terry Pratchett',
-     *      'Simpson, Jacqeline' => 'Jacqueline Simpson',
+     *      'Simpson, Jacqueline' => 'Jacqueline Simpson',
      * )
      *
      * @params array $authors
