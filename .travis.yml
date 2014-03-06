@@ -5,7 +5,10 @@ php:
   - 5.3
   - hhvm
 script:
-  - phpunit test/test.phpunit.php
+  - phpunit
+after_success:
+  - chmod +x test/publishCoverage.sh
+  - test/publishCoverage.sh
 matrix:
   allow_failures:
     - php: hhvm
