@@ -12,10 +12,13 @@
         exit;
     }
 
-    require('util.php');
+    require dirname(__FILE__) . '/util.php';
 
     // load epub data
-    require('epub.php');
+    require dirname(__FILE__) . '/lib/EPubDOMElement.php';
+    require dirname(__FILE__) . '/lib/EPubDOMXPath.php';
+    require dirname(__FILE__) . '/lib/EPub.php';
+
     if(isset($_REQUEST['book'])){
         try{
             $book = $_REQUEST['book'];
