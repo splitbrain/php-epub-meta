@@ -26,3 +26,47 @@ Using the "Lookup Book Data" link will open a dialog that searches the book at
 Google Books you can use the found data using the "fill in" and "replace"
 buttons. The former will only fill empty fields, while the latter will replace
 all data. Author filling is missing currently.
+
+
+Installing via Composer
+=======================
+
+You can use this package in your projects with [Composer](https://getcomposer.org/). Just
+add these lines to your project's `composer.json`:
+
+```
+    "require": {
+        "seblucas/php-epub-meta": "dev-master",
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/mbirth/php-epub-meta"
+        }
+    ]
+```
+
+Since this package requires TbsZip, you might have to add the following lines, too:
+
+```
+    "require": {
+        "Skrol29/tbszip": "dev-master",
+    },
+    "repositories": [
+        {
+            "type": "package",
+            "package": {
+                "name": "Skrol29/tbszip",
+                "version": "dev-master",
+                "source": {
+                    "type": "git",
+                    "url": "https://github.com/Skrol29/tbszip",
+                    "reference": "master"
+                },
+                "autoload": {
+                    "classmap": ["./"]
+                }
+            }
+        }
+    ]
+```
