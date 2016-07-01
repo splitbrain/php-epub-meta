@@ -2,13 +2,10 @@
     // modify this to point to your book directory
     $bookdir = '/home/andi/Dropbox/ebooks/';
 
-
-    error_reporting(E_ALL ^ E_NOTICE);
-
     // proxy google requests
-    if(isset($_GET['api'])){
+    if (isset($_GET['api'])) {
         header('application/json; charset=UTF-8');
-        echo file_get_contents('https://www.googleapis.com/books/v1/volumes?q='.rawurlencode($_GET['api']).'&maxResults=25&printType=books&projection=full');
+        echo file_get_contents('https://www.googleapis.com/books/v1/volumes?q=' . rawurlencode($_GET['api']) . '&maxResults=25&printType=books&projection=full');
         exit;
     }
 
@@ -19,26 +16,26 @@
     require dirname(__FILE__) . '/lib/EPubDOMXPath.php';
     require dirname(__FILE__) . '/lib/EPub.php';
 
-    if(isset($_REQUEST['book'])){
-        try{
+    if (isset($_REQUEST['book'])) {
+        try {
             $book = $_REQUEST['book'];
-            $book = str_replace('..','',$book); // no upper dirs, lowers might be supported later
-            $epub = new EPub($bookdir.$book.'.epub');
-        }catch (Exception $e){
+            $book = str_replace('..', '', $book); // no upper dirs, lowers might be supported later
+            $epub = new EPub($bookdir . $book . '.epub');
+        } catch (Exception $e) {
             $error = $e->getMessage();
         }
     }
 
     // return image data
-    if(isset($_REQUEST['img']) && isset($epub)){
+    if (isset($_REQUEST['img']) && isset($epub)) {
         $img = $epub->Cover();
-        header('Content-Type: '.$img['mime']);
+        header('Content-Type: ' . $img['mime']);
         echo $img['data'];
         exit;
     }
 
     // save epub data
-    if($_REQUEST['save'] && isset($epub)){
+    if ($_REQUEST['save'] && isset($epub)) {
         $epub->Title($_POST['title']);
         $epub->Description($_POST['description']);
         $epub->Language($_POST['language']);
@@ -48,10 +45,12 @@
         $epub->Subjects($_POST['subjects']);
 
         $authors = array();
-        foreach((array) $_POST['authorname'] as $num => $name){
-            if($name){
+        foreach ((array)$_POST['authorname'] as $num => $name) {
+            if ($name) {
                 $as = $_POST['authoras'][$num];
-                if(!$as) $as = $name;
+                if (!$as) {
+                    $as = $name;
+                }
                 $authors[$as] = $name;
             }
         }
@@ -59,46 +58,50 @@
 
         // handle image
         $cover = '';
-        if(preg_match('/^https?:\/\//i',$_POST['coverurl'])){
+        if (preg_match('/^https?:\/\//i', $_POST['coverurl'])) {
             $data = @file_get_contents($_POST['coverurl']);
-            if($data){
+            if ($data) {
                 $cover = tempnam(sys_get_temp_dir(), 'epubcover');
-                file_put_contents($cover,$data);
+                file_put_contents($cover, $data);
                 unset($data);
             }
-        }elseif(is_uploaded_file($_FILES['coverfile']['tmp_name'])){
+        } elseif(is_uploaded_file($_FILES['coverfile']['tmp_name'])) {
             $cover = $_FILES['coverfile']['tmp_name'];
         }
-        if($cover){
+        if ($cover) {
             $info = @getimagesize($cover);
-            if(preg_match('/^image\/(gif|jpe?g|png)$/',$info['mime'])){
-                $epub->Cover($cover,$info['meta']);
-            }else{
-                $error = "Not a valid image file".$cover;
+            if (preg_match('/^image\/(gif|jpe?g|png)$/', $info['mime'])) {
+                $epub->Cover($cover, $info['meta']);
+            } else {
+                $error = 'Not a valid image file' . $cover;
             }
         }
 
         // save the ebook
-        try{
+        try {
             $epub->save();
-        }catch(Exception $e){
+        } catch (Exception $e) {
             $error = $e->getMessage();
         }
 
         // clean up temporary cover file
-        if($cover) @unlink($cover);
+        if ($cover) {
+            @unlink($cover);
+        }
 
         // rename
         $author = array_shift(array_keys($epub->Authors()));
         $title  = $epub->Title();
-        $new    = to_file($author.'-'.$title);
-        $new    = $bookdir.$new.'.epub';
+        $new    = to_file($author . '-' . $title);
+        $new    = $bookdir . $new . '.epub';
         $old    = $epub->file();
-        if(realpath($new) != realpath($old)){
-            if(!@rename($old,$new)) $new = $old; //rename failed, stay here
+        if (realpath($new) != realpath($old)) {
+            if (!@rename($old, $new)) {
+                $new = $old; //rename failed, stay here
+            }
         }
-        $go = basename($new,'.epub');
-        header('Location: ?book='.rawurlencode($go));
+        $go = basename($new, '.epub');
+        header('Location: ?book=' . rawurlencode($go));
         exit;
     }
 
@@ -113,7 +116,7 @@
     <link rel="stylesheet" type="text/css" href="assets/css/style.css" />
 
     <script type="text/javascript">
-        <?php if($error) echo "alert('".htmlspecialchars($error)."');";?>
+        <?php if($error) echo "alert('" . htmlspecialchars($error) . "');";?>
     </script>
 </head>
 <body>
@@ -121,12 +124,12 @@
 <div id="wrapper">
     <ul id="booklist">
         <?php
-            $list = glob($bookdir.'/*.epub');
-            foreach($list as $book){
-                $base = basename($book,'.epub');
+            $list = glob($bookdir . '/*.epub');
+            foreach ($list as $book) {
+                $base = basename($book, '.epub');
                 $name = book_output($base);
-                echo '<li '.($base == $_REQUEST['book'] ? 'class="active"' : '' ).'>';
-                echo '<a href="?book='.htmlspecialchars($base).'">'.$name.'</a>';
+                echo '<li ' . ($base == $_REQUEST['book'] ? 'class="active"' : '' ) . '>';
+                echo '<a href="?book=' . htmlspecialchars($base) . '">' . $name . '</a>';
                 echo '</li>';
             }
         ?>
@@ -146,7 +149,7 @@
                 <td id="authors">
                     <?php
                         $count = 0;
-                        foreach($epub->Authors() as $as => $name){
+                        foreach ($epub->Authors() as $as => $name) {
                     ?>
                             <p>
                                 <input type="text" name="authorname[<?php echo $count?>]" value="<?php echo htmlspecialchars($name)?>" />
@@ -167,7 +170,7 @@
             </tr>
             <tr>
                 <th>Subjects</th>
-                <td><input type="text" name="subjects"  value="<?php echo htmlspecialchars(join(', ',$epub->Subjects()))?>" /></td>
+                <td><input type="text" name="subjects"  value="<?php echo htmlspecialchars(join(', ', $epub->Subjects()))?>" /></td>
             </tr>
             <tr>
                 <th>Publisher</th>
@@ -201,7 +204,7 @@
 
     <p>View and edit epub books stored in <code><?php echo htmlspecialchars($bookdir)?></code>.</p>
     <div class="license">
-    <p><?php echo str_replace("\n\n",'</p><p>',htmlspecialchars(file_get_contents('LICENSE'))) ?></p>
+    <p><?php echo str_replace("\n\n", '</p><p>', htmlspecialchars(file_get_contents('LICENSE'))) ?></p>
     </div>
 
     <?php endif; ?>
