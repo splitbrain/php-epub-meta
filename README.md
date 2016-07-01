@@ -40,36 +40,5 @@ add these lines to your project's `composer.json`:
 ```
     "require": {
         "seblucas/php-epub-meta": "dev-master",
-    },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/mbirth/php-epub-meta"
-        }
-    ]
-```
-
-Since this package requires TbsZip, you might have to add the following lines, too:
-
-```
-    "require": {
-        "Skrol29/tbszip": "dev-master",
-    },
-    "repositories": [
-        {
-            "type": "package",
-            "package": {
-                "name": "Skrol29/tbszip",
-                "version": "dev-master",
-                "source": {
-                    "type": "git",
-                    "url": "https://github.com/Skrol29/tbszip",
-                    "reference": "master"
-                },
-                "autoload": {
-                    "classmap": ["./"]
-                }
-            }
-        }
-    ]
+    }
 ```
