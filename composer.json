@@ -25,6 +25,7 @@
         "Skrol29/tbszip": "dev-master"
     },
     "require-dev": {
+        "phpunit/phpunit": "5.4.*"
     },
     "autoload": {
         "classmap": ["lib/"]

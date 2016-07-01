@@ -9,12 +9,8 @@
         exit;
     }
 
-    require dirname(__FILE__) . '/util.php';
-
-    // load epub data
-    require dirname(__FILE__) . '/lib/EPubDOMElement.php';
-    require dirname(__FILE__) . '/lib/EPubDOMXPath.php';
-    require dirname(__FILE__) . '/lib/EPub.php';
+    require_once dirname(__FILE__) . '/vendor/autoload.php';
+    require_once dirname(__FILE__) . '/util.php';
 
     if (isset($_REQUEST['book'])) {
         try {
