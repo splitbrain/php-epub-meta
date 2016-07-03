@@ -1,3 +1,6 @@
-coverage/*
-php-epub-meta.sublime-*
-clover.xml
+/coverage/*
+/vendor/*
+/php-epub-meta.sublime-*
+/clover.xml
+/composer.phar
+

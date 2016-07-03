@@ -1,8 +1,5 @@
 <?php
 
-require_once(realpath( dirname( __FILE__ ) ) . '/../epub.php');
-
-
 class EPubTest extends PHPUnit_Framework_TestCase {
 
     protected $epub;
