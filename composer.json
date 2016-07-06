@@ -1,5 +1,5 @@
 {
-    "name": "seblucas/php-epub-meta",
+    "name": "splitbrain/php-epub-meta",
     "type": "library",
     "description": "Reading and writing metadata included in the EPub ebook format",
     "keywords": ["epub", "metadata", "ebook"],
