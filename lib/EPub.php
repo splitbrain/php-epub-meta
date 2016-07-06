@@ -669,7 +669,7 @@ class EPub
         }
 
         if ($b[0] == '/') {
-            throw new InvalidArgumentException('Second path part must not start with ' . $m_Separator);
+            throw new InvalidArgumentException('Second path part must not start with /');
         }
 
         $splittedA = preg_split('#/#', $a);
