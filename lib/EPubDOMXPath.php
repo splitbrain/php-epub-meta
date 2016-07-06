@@ -19,4 +19,16 @@ class EPubDOMXPath extends DOMXPath
             }
         }
     }
+
+    /**
+     * Evaluates the given XPath expression
+     * @link http://php.net/manual/en/domxpath.query.php
+     * @param string $expression
+     * @param DOMNode $contextnode
+     * @return EpubDOMNodeList
+     */
+    public function query($expression, $contextnode = null) {
+        return parent::query($expression, $contextnode);
+    }
+
 }

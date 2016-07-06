@@ -10,12 +10,16 @@ define('METADATA_FILE', 'META-INF/container.xml');
 
 class EPub
 {
+    /** @var EPubDOMXPath */
     public $xml; //FIXME: change to protected, later
     public $toc;
+    /** @var  EPubDOMXPath */
     protected $xpath;
+    /** @var  EPubDOMXPath */
     protected $toc_xpath;
     protected $file;
     protected $meta;
+    /** @var  clsTbsZip */
     protected $zip;
     protected $coverpath='';
     protected $namespaces;
@@ -71,6 +75,7 @@ class EPub
 
     public function initSpineComponent()
     {
+        /** @var EPubDOMElement $spine */
         $spine = $this->xpath->query('//opf:spine')->item(0);
         $tocid = $spine->getAttribute('toc');
         $tochref = $this->xpath->query('//opf:manifest/opf:item[@id="' . $tocid . '"]')->item(0)->attr('href');
@@ -126,7 +131,7 @@ class EPub
     public function save()
     {
         $this->download();
-        $this->zip->close();
+        $this->zip->Close();
     }
 
     /**
@@ -153,6 +158,7 @@ class EPub
         $spine = array();
         $nodes = $this->xpath->query('//opf:spine/opf:itemref');
         foreach ($nodes as $node) {
+            /** @var EPubDOMElement $node */
             $idref =  $node->getAttribute('idref');
             $spine[] = $this->encodeComponentName($this->xpath->query('//opf:manifest/opf:item[@id="' . $idref . '"]')->item(0)->getAttribute('href'));
         }
@@ -274,6 +280,8 @@ class EPub
      * )
      *
      * @params array $authors
+     * @param bool $authors
+     * @return array
      */
     public function Authors($authors=false)
     {
@@ -292,6 +300,7 @@ class EPub
             // delete existing nodes
             $nodes = $this->xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
             foreach ($nodes as $node) {
+                /** @var EPubDOMElement $node */
                 $node->delete();
             }
 
@@ -336,7 +345,8 @@ class EPub
     /**
      * Set or get the book title
      *
-     * @param string $title
+     * @param bool|string $title
+     * @return string
      */
     public function Title($title=false)
     {
@@ -386,7 +396,7 @@ class EPub
     /**
      * Set or get the book's Unique Identifier
      *
-     * @param string Unique identifier
+     * @param string $uuid Unique identifier
      */
     public function Uuid($uuid = false)
     {
@@ -651,7 +661,7 @@ class EPub
         return $nodes->item(0);
     }
 
-    public function Combine($a, $b)
+    public function combine($a, $b)
     {
         $isAbsolute = false;
         if ($a[0] == '/') {
@@ -749,11 +759,12 @@ class EPub
      *
      * It should only be used for attributes that are expected to be unique
      *
-     * @param string $item   XML node to set/get
-     * @param string $value  New node value
-     * @param string $att    Attribute name
-     * @param string $aval   Attribute value
-     * @param string $datt   Destination attribute
+     * @param string $item XML node to set/get
+     * @param string $value New node value
+     * @param string $att Attribute name
+     * @param string $aval Attribute value
+     * @param string $datt Destination attribute
+     * @return string
      */
     protected function getset($item, $value=false, $att=false, $aval=false, $datt=false)
     {
@@ -783,6 +794,7 @@ class EPub
                 // if there are multiple matching nodes for some reason delete
                 // them. we'll replace them all with our own single one
                 foreach ($nodes as $n) {
+                    /** @var EPubDOMElement $n */
                     $n->delete();
                 }
                 // readd them
@@ -790,6 +802,7 @@ class EPub
                     $parent = $this->xpath->query('//opf:metadata')->item(0);
 
                     $node = $parent->newChild($item);
+                    /** @var EPubDOMElement $node */
                     if ($att) {
                         $node->attr($att, $aval);
                     }
