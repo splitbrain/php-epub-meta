@@ -587,11 +587,13 @@ class EPub
             // remove current pointer
             $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
             foreach ($nodes as $node) {
+                /** @var EPubDOMElement $node */
                 $node->delete();
             }
             // remove previous manifest entries if they where made by us
             $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="php-epub-meta-cover"]');
             foreach ($nodes as $node) {
+                /** @var EPubDOMElement $node */
                 $node->delete();
             }
 
