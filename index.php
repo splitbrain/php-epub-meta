@@ -31,7 +31,7 @@
     }
 
     // save epub data
-    if ($_REQUEST['save'] && isset($epub)) {
+    if (!empty($_REQUEST['save']) && isset($epub)) {
         $epub->Title($_POST['title']);
         $epub->Description($_POST['description']);
         $epub->Language($_POST['language']);
@@ -112,7 +112,7 @@
     <link rel="stylesheet" type="text/css" href="assets/css/style.css" />
 
     <script type="text/javascript">
-        <?php if($error) echo "alert('" . htmlspecialchars($error) . "');";?>
+        <?php if(isset($error)) echo "alert('" . htmlspecialchars($error) . "');";?>
     </script>
 </head>
 <body>
@@ -124,14 +124,14 @@
             foreach ($list as $book) {
                 $base = basename($book, '.epub');
                 $name = book_output($base);
-                echo '<li ' . ($base == $_REQUEST['book'] ? 'class="active"' : '' ) . '>';
+                echo '<li ' . (isset($_REQUEST['book']) && $base == $_REQUEST['book'] ? 'class="active"' : '' ) . '>';
                 echo '<a href="?book=' . htmlspecialchars($base) . '">' . $name . '</a>';
                 echo '</li>';
             }
         ?>
     </ul>
 
-    <?php if($epub): ?>
+    <?php if(isset($epub)): ?>
     <form action="" method="post" id="bookpanel" enctype="multipart/form-data">
         <input type="hidden" name="book" value="<?php echo htmlspecialchars($_REQUEST['book'])?>" />
 
