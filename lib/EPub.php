@@ -493,23 +493,23 @@ class EPub
     }
 
     /**
-     * Set or get the Serie of the book
+     * Set or get the Series of the book
      *
-     * @param string|null $serie
+     * @param string|null $series
      * @return string
      */
-    public function Serie($serie = null) {
-        return $this->getset('opf:meta', $serie, 'name', 'calibre:series', 'content');
+    public function Series($series = null) {
+        return $this->getset('opf:meta', $series, 'name', 'calibre:series', 'content');
     }
 
     /**
-     * Set or get the Serie Index of the book
+     * Set or get the Series Index of the book
      *
-     * @param string|null $serieIndex
+     * @param string|null $seriesIndex
      * @return string
      */
-    public function SerieIndex($serieIndex = null) {
-        return $this->getset('opf:meta', $serieIndex, 'name', 'calibre:series_index', 'content');
+    public function SeriesIndex($seriesIndex = null) {
+        return $this->getset('opf:meta', $seriesIndex, 'name', 'calibre:series_index', 'content');
     }
 
     /**
