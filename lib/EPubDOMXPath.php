@@ -14,7 +14,7 @@ class EPubDOMXPath extends \DOMXPath
     {
         parent::__construct($doc);
 
-        foreach ($doc->documentElement->namespaces as $ns => $url) {
+        foreach (EPubDOMElement::$namespaces as $ns => $url) {
             $this->registerNamespace($ns, $url);
         }
     }

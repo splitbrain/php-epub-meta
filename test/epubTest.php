@@ -2,8 +2,6 @@
 
 namespace splitbrain\epubmeta\test;
 
-use splitbrain\epubmeta\EPub;
-
 class EPubTest extends \PHPUnit_Framework_TestCase
 {
     /** @var  EPub */
@@ -27,6 +25,40 @@ class EPubTest extends \PHPUnit_Framework_TestCase
     public static function tearDownAfterClass()
     {
         unlink(realpath(dirname(__FILE__)) . '/test.copy.epub');
+    }
+
+    public function testManifest()
+    {
+        $manifest = $this->epub->readManifest();
+
+        $this->assertEquals(41, count($manifest));
+        $this->assertArrayHasKey('OPS/css/page.css', $manifest);
+        $this->assertEquals(
+            array(
+                'id' => 'page-css',
+                'mime' => 'text/css',
+                'exists' => true,
+                'path' => 'OPS/css/page.css'
+            ),
+            $manifest['OPS/css/page.css']
+        );
+    }
+
+    public function testToc()
+    {
+        $toc = $this->epub->readTOC();
+
+        $this->assertEquals(34, count($toc));
+        $this->assertEquals(
+            array(
+                'title' => 'Prologue',
+                'src' => 'main0.xml#section_77304',
+                'id' => 'main0',
+                'mime' => 'application/xhtml+xml',
+                'exists' => true,
+                'path' => 'OPS/main0.xml'
+            )
+            , $toc[3]);
     }
 
     public function testAuthors()

@@ -12,4 +12,9 @@ namespace splitbrain\epubmeta\test;
 class EPub extends \splitbrain\epubmeta\EPub
 {
 
+    public function readManifest()
+    {
+        return parent::readManifest();
+    }
+
 }

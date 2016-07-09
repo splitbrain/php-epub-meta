@@ -10,10 +10,11 @@ namespace splitbrain\epubmeta;
 
 class EPubDOMElement extends \DOMElement
 {
-    public $namespaces = array(
+    static public $namespaces = array(
         'n' => 'urn:oasis:names:tc:opendocument:xmlns:container',
         'opf' => 'http://www.idpf.org/2007/opf',
         'dc' => 'http://purl.org/dc/elements/1.1/',
+        'ncx' => 'http://www.daisy.org/z3986/2005/ncx/'
     );
 
     public function __construct($name, $value = '', $namespaceURI = '')
@@ -21,7 +22,7 @@ class EPubDOMElement extends \DOMElement
         list($ns, $name) = $this->splitns($name);
         $value = htmlspecialchars($value);
         if (!$namespaceURI && $ns) {
-            $namespaceURI = $this->namespaces[$ns];
+            $namespaceURI = self::$namespaces[$ns];
         }
         parent::__construct($name, $value, $namespaceURI);
     }
@@ -39,7 +40,7 @@ class EPubDOMElement extends \DOMElement
         $nsuri = '';
         list($ns, $local) = $this->splitns($name);
         if ($ns) {
-            $nsuri = $this->namespaces[$ns];
+            $nsuri = self::$namespaces[$ns];
             if ($this->isDefaultNamespace($nsuri)) {
                 $name = $local;
                 $nsuri = '';
@@ -68,6 +69,9 @@ class EPubDOMElement extends \DOMElement
 
     /**
      * Simple EPub namespace aware attribute accessor
+     * @param string $attr Attribute to access
+     * @param null $value Value to set. False to delete
+     * @return string
      */
     public function attr($attr, $value = null)
     {
@@ -75,7 +79,7 @@ class EPubDOMElement extends \DOMElement
 
         $nsuri = '';
         if ($ns) {
-            $nsuri = $this->namespaces[$ns];
+            $nsuri = self::$namespaces[$ns];
             if (!$this->namespaceURI) {
                 if ($this->isDefaultNamespace($nsuri)) {
                     $nsuri = '';

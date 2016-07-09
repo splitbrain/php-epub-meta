@@ -20,11 +20,6 @@ class EPub
     /** @var  EPubDOMXPath XPath access to the meta package */
     protected $meta_xpath;
 
-    /** @var  EPubDOMDocument The Table of Contents file */
-    public $toc_xml;
-    /** @var  EPubDOMXPath XPath access to the TOC */
-    protected $toc_xpath;
-
     /** @var string The path to the epub file */
     protected $file;
 
@@ -33,6 +28,9 @@ class EPub
     protected $coverpath = '';
     protected $namespaces;
     protected $imagetoadd = '';
+
+    /** @var  null|array The manifest data, eg. which files are available */
+    protected $manifest = null;
 
     /**
      * Constructor
@@ -78,26 +76,6 @@ class EPub
         $this->meta_xml->loadXML($data);
         $this->meta_xml->formatOutput = true;
         $this->meta_xpath = new EPubDOMXPath($this->meta_xml);
-    }
-
-    public function initSpineComponent()
-    {
-        /** @var EPubDOMElement $spine */
-        $spine = $this->meta_xpath->query('//opf:spine')->item(0);
-        $tocid = $spine->getAttribute('toc');
-        $tochref = $this->meta_xpath->query('//opf:manifest/opf:item[@id="' . $tocid . '"]')->item(0)->attr('href');
-        $tocpath = $this->getFullPath($tochref);
-        // read epub toc
-        if (!$this->zip->FileExists($tocpath)) {
-            throw new \Exception('Unable to find ' . $tocpath);
-        }
-
-        $data = $this->zip->FileRead($tocpath);
-        $this->toc_xml = new EPubDOMDocument();
-        $this->toc_xml->loadXML($data);
-        $this->toc_xpath = new EPubDOMXPath($this->toc_xml);
-        $rootNamespace = $this->toc_xml->lookupNamespaceUri($this->toc_xml->namespaceURI);
-        $this->toc_xpath->registerNamespace('x', $rootNamespace);
     }
 
     /**
@@ -156,120 +134,7 @@ class EPub
         }
     }
 
-    /**
-     * Get the components list as an array
-     */
-    public function components()
-    {
-        $spine = array();
-        $nodes = $this->meta_xpath->query('//opf:spine/opf:itemref');
-        foreach ($nodes as $node) {
-            /** @var EPubDOMElement $node */
-            $idref = $node->getAttribute('idref');
-            $spine[] = $this->encodeComponentName($this->meta_xpath->query('//opf:manifest/opf:item[@id="' . $idref . '"]')->item(0)->getAttribute('href'));
-        }
-        return $spine;
-    }
 
-    /**
-     * Get the component content
-     */
-    public function component($comp)
-    {
-        $path = $this->decodeComponentName($comp);
-        $path = $this->getFullPath($path);
-        if (!$this->zip->FileExists($path)) {
-            throw new \Exception('Unable to find ' . $path . ' <' . $comp . '>');
-        }
-
-        $data = $this->zip->FileRead($path);
-        return $data;
-    }
-
-    public function getComponentName($comp, $elementPath)
-    {
-        $path = $this->decodeComponentName($comp);
-        $path = $this->getFullPath($path, $elementPath);
-        if (!$this->zip->FileExists($path)) {
-            error_log('Unable to find ' . $path);
-            return false;
-        }
-        $ref = dirname('/' . $this->meta);
-        $ref = ltrim($ref, '\\');
-        $ref = ltrim($ref, '/');
-        if (strlen($ref) > 0) {
-            $path = str_replace($ref . '/', '', $path);
-        }
-        return $this->encodeComponentName($path);
-    }
-
-    /**
-     * Encode the component name (to replace / and -)
-     */
-    private function encodeComponentName($src)
-    {
-        return str_replace(array('/', '-'),
-            array('~SLASH~', '~DASH~'),
-            $src);
-    }
-
-    /**
-     * Decode the component name (to replace / and -)
-     */
-    private function decodeComponentName($src)
-    {
-        return str_replace(array('~SLASH~', '~DASH~'),
-            array('/', '-'),
-            $src);
-    }
-
-    /**
-     * Get the component content type
-     */
-    public function componentContentType($comp)
-    {
-        $comp = $this->decodeComponentName($comp);
-        $item = $this->meta_xpath->query('//opf:manifest/opf:item[@href="' . $comp . '"]')->item(0);
-        if ($item) {
-            return $item->getAttribute('media-type');
-        }
-
-        // I had at least one book containing %20 instead of spaces in the opf file
-        $comp = str_replace(' ', '%20', $comp);
-        $item = $this->meta_xpath->query('//opf:manifest/opf:item[@href="' . $comp . '"]')->item(0);
-        if ($item) {
-            return $item->getAttribute('media-type');
-        }
-        return 'application/octet-stream';
-    }
-
-    private function getNavPointDetail($node)
-    {
-        $title = $this->toc_xpath->query('x:navLabel/x:text', $node)->item(0)->nodeValue;
-        $src = $this->toc_xpath->query('x:content', $node)->item(0)->attr('src');
-        $src = $this->encodeComponentName($src);
-        return array('title' => $title, 'src' => $src);
-    }
-
-    /**
-     * Get the Epub content (TOC) as an array
-     *
-     * For each chapter there is a "title" and a "src"
-     */
-    public function contents()
-    {
-        $contents = array();
-        $nodes = $this->toc_xpath->query('//x:ncx/x:navMap/x:navPoint');
-        foreach ($nodes as $node) {
-            $contents[] = $this->getNavPointDetail($node);
-
-            $insidenodes = $this->toc_xpath->query('x:navPoint', $node);
-            foreach ($insidenodes as $insidenode) {
-                $contents[] = $this->getNavPointDetail($insidenode);
-            }
-        }
-        return $contents;
-    }
 
     #region Book Attribute Getter/Setters
 
@@ -582,6 +447,131 @@ class EPub
 
     #endregion
 
+    #region Book Attribute Getters
+
+    /**
+     * Lists all files from the manifest
+     *
+     * @return array
+     */
+    protected function readManifest()
+    {
+        $manifest = array();
+        $nodes = $this->meta_xpath->query('//opf:manifest/opf:item');
+
+        foreach ($nodes as $node) {
+            /** @var EPubDOMElement $node */
+            $file = $node->attr('opf:href');
+            if ($file === '') {
+                continue;
+            }
+            $file = $this->getFullPath($file);
+
+            $manifest[$file] = array(
+                'id' => $node->attr('id'),
+                'mime' => $node->attr('opf:media-type'),
+                'exists' => (bool)$this->zip->FileExists($file),
+                'path' => $file
+            );
+        }
+
+        return $manifest;
+    }
+
+    /**
+     * Returns info about the given file from the manifest
+     *
+     * @param $path
+     * @return array
+     */
+    public function getFileInfo($path)
+    {
+        if ($this->manifest === null) {
+            $this->manifest = $this->readManifest();
+        }
+
+        if (isset($this->manifest[$path])) {
+            return $this->manifest[$path];
+        }
+        return array('id' => '', 'mime' => '', 'exists' => false, 'file' => $path);
+    }
+
+    /**
+     * Returns the Table of Contents
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function readTOC()
+    {
+        $contents = array();
+
+        // find TOC file
+        $tocid = $this->meta_xpath->query('//opf:spine')->item(0)->attr('toc');
+        $tochref = $this->meta_xpath->query('//opf:manifest/opf:item[@id="' . $tocid . '"]')->item(0)->attr('href');
+        $tocpath = $this->getFullPath($tochref);
+        // read TOC file
+        if (!$this->zip->FileExists($tocpath)) {
+            throw new \Exception('Unable to find ' . $tocpath);
+        }
+        $data = $this->zip->FileRead($tocpath);
+        // parse TOC file
+        $toc_xml = new EPubDOMDocument();
+        $toc_xml->loadXML($data);
+        $toc_xpath = new EPubDOMXPath($toc_xml);
+
+        // read nav point nodes
+        $nodes = $toc_xpath->query('//ncx:ncx/ncx:navMap/ncx:navPoint');
+        foreach ($nodes as $node) {
+            $contents[] = $this->mkTocEntry($node, $toc_xpath);
+
+            $insidenodes = $toc_xpath->query('ncx:navPoint', $node);
+            foreach ($insidenodes as $insidenode) {
+                $contents[] = $this->mkTocEntry($insidenode, $toc_xpath);
+            }
+        }
+
+        return $contents;
+    }
+
+    /**
+     * Enhances the a single TOC entry with data from the manifest
+     *
+     * @param EPubDOMElement $node an ncx:navPoint entry
+     * @param EPubDOMXPath $toc_xpath
+     * @return array
+     */
+    protected function mkTocEntry(EPubDOMElement $node, EPubDOMXPath $toc_xpath)
+    {
+        $title = $toc_xpath->query('ncx:navLabel/ncx:text', $node)->item(0)->nodeValue;
+        $src = $toc_xpath->query('ncx:content', $node)->item(0)->attr('src');
+
+        $file = $this->getFullPath($src);
+
+        return array_merge(array('title' => $title, 'src' => $src), $this->getFileInfo($file));
+    }
+
+    /**
+     * Read the contents of a file witin the epub
+     *
+     * You probably want to use getFileInfo() first to check if the file exists and get
+     * additional file info like the mime type
+     *
+     * @param string $path the path within the epub file
+     * @return string the raw file contents
+     * @throws \Exception when the file doesn't exists
+     */
+    public function getFile($path)
+    {
+        if (!$this->zip->FileExists($path)) {
+            throw new \Exception('No such file');
+        }
+
+        return $this->zip->FileRead($path);
+    }
+
+    #endregion
+
     /**
      * Read the cover data
      *
@@ -732,6 +722,8 @@ class EPub
 
     private function getFullPath($file, $context = null)
     {
+        list($file) = explode('#', $file); // strip anchors
+
         $path = dirname('/' . $this->meta) . '/' . $file;
         $path = ltrim($path, '\\');
         $path = ltrim($path, '/');
