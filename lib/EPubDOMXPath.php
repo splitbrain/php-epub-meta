@@ -6,13 +6,15 @@
  * @author Sébastien Lucas <sebastien@slucas.fr>
  */
 
-class EPubDOMXPath extends DOMXPath
+namespace splitbrain\epubmeta;
+
+class EPubDOMXPath extends \DOMXPath
 {
-    public function __construct(DOMDocument $doc)
+    public function __construct(\DOMDocument $doc)
     {
         parent::__construct($doc);
 
-        if (is_a($doc->documentElement, 'EPubDOMElement'))
+        if (is_a($doc->documentElement, '\\splitbrain\\epubmeta\\EPubDOMElement'))
         {
             foreach ($doc->documentElement->namespaces as $ns => $url) {
                 $this->registerNamespace($ns, $url);
@@ -24,7 +26,7 @@ class EPubDOMXPath extends DOMXPath
      * Evaluates the given XPath expression
      * @link http://php.net/manual/en/domxpath.query.php
      * @param string $expression
-     * @param DOMNode $contextnode
+     * @param \DOMNode $contextnode
      * @return EpubDOMNodeList
      */
     public function query($expression, $contextnode = null) {

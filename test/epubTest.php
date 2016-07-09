@@ -1,6 +1,10 @@
 <?php
 
-class EPubTest extends PHPUnit_Framework_TestCase {
+namespace splitbrain\epubmeta\test;
+
+use splitbrain\epubmeta\EPub;
+
+class EPubTest extends \PHPUnit_Framework_TestCase {
     /** @var  EPub */
     protected $epub;
 

@@ -6,7 +6,9 @@
  * @author Sébastien Lucas <sebastien@slucas.fr>
  */
 
-class EPubDOMElement extends DOMElement
+namespace splitbrain\epubmeta;
+
+class EPubDOMElement extends \DOMElement
 {
     public $namespaces = array(
         'n'   => 'urn:oasis:names:tc:opendocument:xmlns:container',
@@ -28,9 +30,13 @@ class EPubDOMElement extends DOMElement
      * Create and append a new child
      *
      * Works with our epub namespaces and omits default namespaces
+     * @param string $name
+     * @param string $value
+     * @return \DOMNode
      */
     public function newChild($name, $value='')
     {
+        $nsuri = '';
         list($ns, $local) = $this->splitns($name);
         if ($ns) {
             $nsuri = $this->namespaces[$ns];

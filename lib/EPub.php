@@ -6,6 +6,8 @@
  * @author Sébastien Lucas <sebastien@slucas.fr>
  */
 
+namespace splitbrain\epubmeta;
+
 define('METADATA_FILE', 'META-INF/container.xml');
 
 class EPub
@@ -19,7 +21,7 @@ class EPub
     protected $toc_xpath;
     protected $file;
     protected $meta;
-    /** @var  clsTbsZip */
+    /** @var  \clsTbsZip */
     protected $zip;
     protected $coverpath='';
     protected $namespaces;
@@ -30,7 +32,7 @@ class EPub
      *
      * @param string $file path to epub file to work on
      * @param string $zipClass class to handle zip
-     * @throws Exception if metadata could not be loaded
+     * @throws \Exception if metadata could not be loaded
      */
     public function __construct($file, $zipClass = 'clsTbsZip')
     {
@@ -38,20 +40,20 @@ class EPub
         $this->file = $file;
         $this->zip = new $zipClass();
         if (!$this->zip->Open($this->file)) {
-            throw new Exception('Failed to read epub file');
+            throw new \Exception('Failed to read epub file');
         }
 
         // read container data
         if (!$this->zip->FileExists(METADATA_FILE)) {
-            throw new Exception('Unable to find metadata.xml');
+            throw new \Exception('Unable to find metadata.xml');
         }
 
         $data = $this->zip->FileRead(METADATA_FILE);
         if ($data == false) {
-            throw new Exception('Failed to access epub container data');
+            throw new \Exception('Failed to access epub container data');
         }
-        $xml = new DOMDocument();
-        $xml->registerNodeClass('DOMElement', 'EPubDOMElement');
+        $xml = new \DOMDocument();
+        $xml->registerNodeClass('DOMElement', '\\splitbrain\\epubmeta\\EPubDOMElement');
         $xml->loadXML($data);
         $xpath = new EPubDOMXPath($xml);
         $nodes = $xpath->query('//n:rootfiles/n:rootfile[@media-type="application/oebps-package+xml"]');
@@ -59,15 +61,15 @@ class EPub
 
         // load metadata
         if (!$this->zip->FileExists($this->meta)) {
-            throw new Exception('Unable to find ' . $this->meta);
+            throw new \Exception('Unable to find ' . $this->meta);
         }
 
         $data = $this->zip->FileRead($this->meta);
         if (!$data) {
-            throw new Exception('Failed to access epub metadata');
+            throw new \Exception('Failed to access epub metadata');
         }
-        $this->xml =  new DOMDocument();
-        $this->xml->registerNodeClass('DOMElement', 'EPubDOMElement');
+        $this->xml =  new \DOMDocument();
+        $this->xml->registerNodeClass('DOMElement', '\\splitbrain\\epubmeta\\EPubDOMElement');
         $this->xml->loadXML($data);
         $this->xml->formatOutput = true;
         $this->xpath = new EPubDOMXPath($this->xml);
@@ -82,12 +84,12 @@ class EPub
         $tocpath = $this->getFullPath($tochref);
         // read epub toc
         if (!$this->zip->FileExists($tocpath)) {
-            throw new Exception('Unable to find ' . $tocpath);
+            throw new \Exception('Unable to find ' . $tocpath);
         }
 
         $data = $this->zip->FileRead($tocpath);
-        $this->toc = new DOMDocument();
-        $this->toc->registerNodeClass('DOMElement', 'EPubDOMElement');
+        $this->toc = new \DOMDocument();
+        $this->toc->registerNodeClass('DOMElement', '\\splitbrain\\epubmeta\\EPubDOMElement');
         $this->toc->loadXML($data);
         $this->toc_xpath = new EPubDOMXPath($this->toc);
         $rootNamespace = $this->toc->lookupNamespaceUri($this->toc->namespaceURI);
@@ -173,7 +175,7 @@ class EPub
         $path = $this->decodeComponentName($comp);
         $path = $this->getFullPath($path);
         if (!$this->zip->FileExists($path)) {
-            throw new Exception('Unable to find ' . $path . ' <' . $comp . '>');
+            throw new \Exception('Unable to find ' . $path . ' <' . $comp . '>');
         }
 
         $data = $this->zip->FileRead($path);
@@ -399,13 +401,13 @@ class EPub
      *
      * @param string|null $uuid Unique identifier
      * @return string
-     * @throws Exception
+     * @throws \Exception
      * @todo auto add unique identifer if needed
      */
     public function Uuid($uuid = null) {
         $nodes = $this->xpath->query('/opf:package');
         if($nodes->length !== 1) {
-            throw new Exception('Cannot find ebook identifier');
+            throw new \Exception('Cannot find ebook identifier');
         }
         $identifier = $nodes->item(0)->attr('unique-identifier');
 
@@ -637,9 +639,9 @@ class EPub
         $path = dirname('/' . $this->meta) . '/' . $path; // image path is relative to meta file
         $path = ltrim($path, '/');
 
-        $zip = new ZipArchive();
+        $zip = new \ZipArchive();
         if (!@$zip->open($this->file)) {
-            throw new Exception('Failed to read epub file');
+            throw new \Exception('Failed to read epub file');
         }
         $data = $zip->getFromName($path);
 
@@ -678,7 +680,7 @@ class EPub
         }
 
         if ($b[0] == '/') {
-            throw new InvalidArgumentException('Second path part must not start with /');
+            throw new \InvalidArgumentException('Second path part must not start with /');
         }
 
         $splittedA = preg_split('#/#', $a);

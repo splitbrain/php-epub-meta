@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "b435dd27ef7a0329dff76247c231f9e7",
-    "content-hash": "cec5f5f6dfcc0b18b9460205b5352896",
+    "hash": "924b40829f78ea2af3de2fc516d36709",
+    "content-hash": "d0841a1d14a8e6ea6305431ea76f1267",
     "packages": [
         {
             "name": "seblucas/tbszip",
