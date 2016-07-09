@@ -12,20 +12,27 @@ define('METADATA_FILE', 'META-INF/container.xml');
 
 class EPub
 {
-    /** @var EPubDOMXPath */
-    public $xml; //FIXME: change to protected, later
-    public $toc;
-    /** @var  EPubDOMXPath */
-    protected $xpath;
-    /** @var  EPubDOMXPath */
-    protected $toc_xpath;
-    protected $file;
+
+    /** @var string Location of the meta package within the epub */
     protected $meta;
+    /** @var EPubDOMDocument Parsed XML of the meta package */
+    public $meta_xml;
+    /** @var  EPubDOMXPath XPath access to the meta package */
+    protected $meta_xpath;
+
+    /** @var  EPubDOMDocument The Table of Contents file */
+    public $toc_xml;
+    /** @var  EPubDOMXPath XPath access to the TOC */
+    protected $toc_xpath;
+
+    /** @var string The path to the epub file */
+    protected $file;
+
     /** @var  \clsTbsZip */
     protected $zip;
-    protected $coverpath='';
+    protected $coverpath = '';
     protected $namespaces;
-    protected $imagetoadd='';
+    protected $imagetoadd = '';
 
     /**
      * Constructor
@@ -52,8 +59,7 @@ class EPub
         if ($data == false) {
             throw new \Exception('Failed to access epub container data');
         }
-        $xml = new \DOMDocument();
-        $xml->registerNodeClass('DOMElement', '\\splitbrain\\epubmeta\\EPubDOMElement');
+        $xml = new EPubDOMDocument();
         $xml->loadXML($data);
         $xpath = new EPubDOMXPath($xml);
         $nodes = $xpath->query('//n:rootfiles/n:rootfile[@media-type="application/oebps-package+xml"]');
@@ -68,19 +74,18 @@ class EPub
         if (!$data) {
             throw new \Exception('Failed to access epub metadata');
         }
-        $this->xml =  new \DOMDocument();
-        $this->xml->registerNodeClass('DOMElement', '\\splitbrain\\epubmeta\\EPubDOMElement');
-        $this->xml->loadXML($data);
-        $this->xml->formatOutput = true;
-        $this->xpath = new EPubDOMXPath($this->xml);
+        $this->meta_xml = new EpubDOMDocument();
+        $this->meta_xml->loadXML($data);
+        $this->meta_xml->formatOutput = true;
+        $this->meta_xpath = new EPubDOMXPath($this->meta_xml);
     }
 
     public function initSpineComponent()
     {
         /** @var EPubDOMElement $spine */
-        $spine = $this->xpath->query('//opf:spine')->item(0);
+        $spine = $this->meta_xpath->query('//opf:spine')->item(0);
         $tocid = $spine->getAttribute('toc');
-        $tochref = $this->xpath->query('//opf:manifest/opf:item[@id="' . $tocid . '"]')->item(0)->attr('href');
+        $tochref = $this->meta_xpath->query('//opf:manifest/opf:item[@id="' . $tocid . '"]')->item(0)->attr('href');
         $tocpath = $this->getFullPath($tochref);
         // read epub toc
         if (!$this->zip->FileExists($tocpath)) {
@@ -88,11 +93,10 @@ class EPub
         }
 
         $data = $this->zip->FileRead($tocpath);
-        $this->toc = new \DOMDocument();
-        $this->toc->registerNodeClass('DOMElement', '\\splitbrain\\epubmeta\\EPubDOMElement');
-        $this->toc->loadXML($data);
-        $this->toc_xpath = new EPubDOMXPath($this->toc);
-        $rootNamespace = $this->toc->lookupNamespaceUri($this->toc->namespaceURI);
+        $this->toc_xml = new EPubDOMDocument();
+        $this->toc_xml->loadXML($data);
+        $this->toc_xpath = new EPubDOMXPath($this->toc_xml);
+        $rootNamespace = $this->toc_xml->lookupNamespaceUri($this->toc_xml->namespaceURI);
         $this->toc_xpath->registerNamespace('x', $rootNamespace);
     }
 
@@ -139,13 +143,13 @@ class EPub
     /**
      * Get the updated epub
      */
-    public function download($file=false)
+    public function download($file = false)
     {
-        $this->zip->FileReplace($this->meta, $this->xml->saveXML());
+        $this->zip->FileReplace($this->meta, $this->meta_xml->saveXML());
         // add the cover image
         if ($this->imagetoadd) {
             $this->zip->FileReplace($this->coverpath, file_get_contents($this->imagetoadd));
-            $this->imagetoadd='';
+            $this->imagetoadd = '';
         }
         if ($file) {
             $this->zip->Flush(TBSZIP_DOWNLOAD, $file);
@@ -158,11 +162,11 @@ class EPub
     public function components()
     {
         $spine = array();
-        $nodes = $this->xpath->query('//opf:spine/opf:itemref');
+        $nodes = $this->meta_xpath->query('//opf:spine/opf:itemref');
         foreach ($nodes as $node) {
             /** @var EPubDOMElement $node */
-            $idref =  $node->getAttribute('idref');
-            $spine[] = $this->encodeComponentName($this->xpath->query('//opf:manifest/opf:item[@id="' . $idref . '"]')->item(0)->getAttribute('href'));
+            $idref = $node->getAttribute('idref');
+            $spine[] = $this->encodeComponentName($this->meta_xpath->query('//opf:manifest/opf:item[@id="' . $idref . '"]')->item(0)->getAttribute('href'));
         }
         return $spine;
     }
@@ -205,8 +209,8 @@ class EPub
     private function encodeComponentName($src)
     {
         return str_replace(array('/', '-'),
-                           array('~SLASH~', '~DASH~'),
-                           $src);
+            array('~SLASH~', '~DASH~'),
+            $src);
     }
 
     /**
@@ -215,10 +219,9 @@ class EPub
     private function decodeComponentName($src)
     {
         return str_replace(array('~SLASH~', '~DASH~'),
-                           array('/', '-'),
-                           $src);
+            array('/', '-'),
+            $src);
     }
-
 
     /**
      * Get the component content type
@@ -226,14 +229,14 @@ class EPub
     public function componentContentType($comp)
     {
         $comp = $this->decodeComponentName($comp);
-        $item = $this->xpath->query('//opf:manifest/opf:item[@href="' . $comp . '"]')->item(0);
+        $item = $this->meta_xpath->query('//opf:manifest/opf:item[@href="' . $comp . '"]')->item(0);
         if ($item) {
             return $item->getAttribute('media-type');
         }
 
         // I had at least one book containing %20 instead of spaces in the opf file
         $comp = str_replace(' ', '%20', $comp);
-        $item = $this->xpath->query('//opf:manifest/opf:item[@href="' . $comp . '"]')->item(0);
+        $item = $this->meta_xpath->query('//opf:manifest/opf:item[@href="' . $comp . '"]')->item(0);
         if ($item) {
             return $item->getAttribute('media-type');
         }
@@ -244,7 +247,7 @@ class EPub
     {
         $title = $this->toc_xpath->query('x:navLabel/x:text', $node)->item(0)->nodeValue;
         $src = $this->toc_xpath->query('x:content', $node)->item(0)->attr('src');
-        $src = $this->encodeComponentName ($src);
+        $src = $this->encodeComponentName($src);
         return array('title' => $title, 'src' => $src);
     }
 
@@ -288,12 +291,13 @@ class EPub
      * @param array|string|null $authors
      * @return array
      */
-    public function Authors($authors = null) {
+    public function Authors($authors = null)
+    {
         // set new data
-        if($authors !== null) {
+        if ($authors !== null) {
             // Author where given as a comma separated list
-            if(is_string($authors)) {
-                if($authors == '') {
+            if (is_string($authors)) {
+                if ($authors == '') {
                     $authors = array();
                 } else {
                     $authors = explode(',', $authors);
@@ -302,16 +306,16 @@ class EPub
             }
 
             // delete existing nodes
-            $nodes = $this->xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
-            foreach($nodes as $node) {
+            $nodes = $this->meta_xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
+            foreach ($nodes as $node) {
                 /** @var EPubDOMElement $node */
                 $node->delete();
             }
 
             // add new nodes
-            $parent = $this->xpath->query('//opf:metadata')->item(0);
-            foreach($authors as $as => $name) {
-                if(is_int($as)) {
+            $parent = $this->meta_xpath->query('//opf:metadata')->item(0);
+            foreach ($authors as $as => $name) {
+                if (is_int($as)) {
                     $as = $name; //numeric array given
                 }
                 $node = $parent->newChild('dc:creator', $name);
@@ -325,20 +329,20 @@ class EPub
         // read current data
         $rolefix = false;
         $authors = array();
-        $nodes = $this->xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
-        if($nodes->length == 0) {
+        $nodes = $this->meta_xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
+        if ($nodes->length == 0) {
             // no nodes where found, let's try again without role
-            $nodes = $this->xpath->query('//opf:metadata/dc:creator');
+            $nodes = $this->meta_xpath->query('//opf:metadata/dc:creator');
             $rolefix = true;
         }
-        foreach($nodes as $node) {
+        foreach ($nodes as $node) {
             $name = $node->nodeValue;
             $as = $node->attr('opf:file-as');
-            if(!$as) {
+            if (!$as) {
                 $as = $name;
                 $node->attr('opf:file-as', $as);
             }
-            if($rolefix) {
+            if ($rolefix) {
                 $node->attr('opf:role', 'aut');
             }
             $authors[$as] = $name;
@@ -352,7 +356,8 @@ class EPub
      * @param string|null $title
      * @return string
      */
-    public function Title($title = null) {
+    public function Title($title = null)
+    {
         return $this->getset('dc:title', $title);
     }
 
@@ -362,7 +367,8 @@ class EPub
      * @param string|null $lang
      * @return string
      */
-    public function Language($lang = null) {
+    public function Language($lang = null)
+    {
         return $this->getset('dc:language', $lang);
     }
 
@@ -372,7 +378,8 @@ class EPub
      * @param string|null $publisher
      * @return string
      */
-    public function Publisher($publisher = null) {
+    public function Publisher($publisher = null)
+    {
         return $this->getset('dc:publisher', $publisher);
     }
 
@@ -382,7 +389,8 @@ class EPub
      * @param string|null $rights
      * @return string
      */
-    public function Copyright($rights = null) {
+    public function Copyright($rights = null)
+    {
         return $this->getset('dc:rights', $rights);
     }
 
@@ -392,7 +400,8 @@ class EPub
      * @param string|null $description
      * @return string
      */
-    public function Description($description = null) {
+    public function Description($description = null)
+    {
         return $this->getset('dc:description', $description);
     }
 
@@ -404,9 +413,10 @@ class EPub
      * @throws \Exception
      * @todo auto add unique identifer if needed
      */
-    public function Uuid($uuid = null) {
-        $nodes = $this->xpath->query('/opf:package');
-        if($nodes->length !== 1) {
+    public function Uuid($uuid = null)
+    {
+        $nodes = $this->meta_xpath->query('/opf:package');
+        if ($nodes->length !== 1) {
             throw new \Exception('Cannot find ebook identifier');
         }
         $identifier = $nodes->item(0)->attr('unique-identifier');
@@ -423,7 +433,8 @@ class EPub
      * @todo use DateTime class instead of string
      * @return string
      */
-    public function CreationDate($date = null) {
+    public function CreationDate($date = null)
+    {
         $res = $this->getset('dc:date', $date, 'opf:event', 'creation');
 
         return $res;
@@ -436,7 +447,8 @@ class EPub
      * @todo use DateTime class instead of string
      * @return string
      */
-    public function ModificationDate($date = null) {
+    public function ModificationDate($date = null)
+    {
         $res = $this->getset('dc:date', $date, 'opf:event', 'modification');
 
         return $res;
@@ -448,7 +460,8 @@ class EPub
      * @param string|null $uri URI
      * @return string
      */
-    public function Uri($uri = null) {
+    public function Uri($uri = null)
+    {
         $res = $this->getset('dc:identifier', $uri, 'opf:scheme', 'URI');
 
         return $res;
@@ -460,7 +473,8 @@ class EPub
      * @param string|null $isbn
      * @return string
      */
-    public function ISBN($isbn = null) {
+    public function ISBN($isbn = null)
+    {
         return $this->getset('dc:identifier', $isbn, 'opf:scheme', 'ISBN');
     }
 
@@ -470,7 +484,8 @@ class EPub
      * @param string|null $google
      * @return string
      */
-    public function Google($google = null) {
+    public function Google($google = null)
+    {
         return $this->getset('dc:identifier', $google, 'opf:scheme', 'GOOGLE');
     }
 
@@ -480,7 +495,8 @@ class EPub
      * @param string|null $amazon
      * @return string
      */
-    public function Amazon($amazon = null) {
+    public function Amazon($amazon = null)
+    {
         return $this->getset('dc:identifier', $amazon, 'opf:scheme', 'AMAZON');
     }
 
@@ -490,7 +506,8 @@ class EPub
      * @param null|string $uuid
      * @return string
      */
-    public function Calibre($uuid = null) {
+    public function Calibre($uuid = null)
+    {
         return $this->getset('dc:identifier', $uuid, 'opf:scheme', 'calibre');
     }
 
@@ -500,7 +517,8 @@ class EPub
      * @param string|null $series
      * @return string
      */
-    public function Series($series = null) {
+    public function Series($series = null)
+    {
         return $this->getset('opf:meta', $series, 'name', 'calibre:series', 'content');
     }
 
@@ -510,7 +528,8 @@ class EPub
      * @param string|null $seriesIndex
      * @return string
      */
-    public function SeriesIndex($seriesIndex = null) {
+    public function SeriesIndex($seriesIndex = null)
+    {
         return $this->getset('opf:meta', $seriesIndex, 'name', 'calibre:series_index', 'content');
     }
 
@@ -523,11 +542,12 @@ class EPub
      * @param array|string|null $subjects
      * @return string[]
      */
-    public function Subjects($subjects = null) {
+    public function Subjects($subjects = null)
+    {
         // setter
-        if($subjects !== null) {
-            if(is_string($subjects)) {
-                if($subjects === '') {
+        if ($subjects !== null) {
+            if (is_string($subjects)) {
+                if ($subjects === '') {
                     $subjects = array();
                 } else {
                     $subjects = explode(',', $subjects);
@@ -536,15 +556,15 @@ class EPub
             }
 
             // delete previous
-            $nodes = $this->xpath->query('//opf:metadata/dc:subject');
-            foreach($nodes as $node) {
+            $nodes = $this->meta_xpath->query('//opf:metadata/dc:subject');
+            foreach ($nodes as $node) {
                 /** @var EPubDOMElement $node */
                 $node->delete();
             }
             // add new ones
-            $parent = $this->xpath->query('//opf:metadata')->item(0);
-            foreach($subjects as $subj) {
-                $node = $this->xml->createElement('dc:subject', htmlspecialchars($subj));
+            $parent = $this->meta_xpath->query('//opf:metadata')->item(0);
+            foreach ($subjects as $subj) {
+                $node = $this->meta_xml->createElement('dc:subject', htmlspecialchars($subj));
                 $parent->appendChild($node);
             }
 
@@ -553,8 +573,8 @@ class EPub
 
         //getter
         $subjects = array();
-        $nodes = $this->xpath->query('//opf:metadata/dc:subject');
-        foreach($nodes as $node) {
+        $nodes = $this->meta_xpath->query('//opf:metadata/dc:subject');
+        foreach ($nodes as $node) {
             $subjects[] = $node->nodeValue;
         }
         return $subjects;
@@ -582,18 +602,18 @@ class EPub
      * @param  string $mime mime type of the given file
      * @return array
      */
-    public function Cover($path=false, $mime=false)
+    public function Cover($path = false, $mime = false)
     {
         // set cover
         if ($path !== false) {
             // remove current pointer
-            $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
+            $nodes = $this->meta_xpath->query('//opf:metadata/opf:meta[@name="cover"]');
             foreach ($nodes as $node) {
                 /** @var EPubDOMElement $node */
                 $node->delete();
             }
             // remove previous manifest entries if they where made by us
-            $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="php-epub-meta-cover"]');
+            $nodes = $this->meta_xpath->query('//opf:manifest/opf:item[@id="php-epub-meta-cover"]');
             foreach ($nodes as $node) {
                 /** @var EPubDOMElement $node */
                 $node->delete();
@@ -601,13 +621,13 @@ class EPub
 
             if ($path) {
                 // add pointer
-                $parent = $this->xpath->query('//opf:metadata')->item(0);
+                $parent = $this->meta_xpath->query('//opf:metadata')->item(0);
                 $node = $parent->newChild('opf:meta');
                 $node->attr('opf:name', 'cover');
                 $node->attr('opf:content', 'php-epub-meta-cover');
 
                 // add manifest
-                $parent = $this->xpath->query('//opf:manifest')->item(0);
+                $parent = $this->meta_xpath->query('//opf:manifest')->item(0);
                 $node = $parent->newChild('opf:item');
                 $node->attr('id', 'php-epub-meta-cover');
                 $node->attr('opf:href', 'php-epub-meta-cover.img');
@@ -621,16 +641,16 @@ class EPub
         }
 
         // load cover
-        $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
+        $nodes = $this->meta_xpath->query('//opf:metadata/opf:meta[@name="cover"]');
         if (!$nodes->length) {
             return $this->no_cover();
         }
-        $coverid = (String) $nodes->item(0)->attr('opf:content');
+        $coverid = (String)$nodes->item(0)->attr('opf:content');
         if (!$coverid) {
             return $this->no_cover();
         }
 
-        $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="' . $coverid . '"]');
+        $nodes = $this->meta_xpath->query('//opf:manifest/opf:item[@id="' . $coverid . '"]');
         if (!$nodes->length) {
             return $this->no_cover();
         }
@@ -646,27 +666,27 @@ class EPub
         $data = $zip->getFromName($path);
 
         return array(
-            'mime'  => $mime,
-            'data'  => $data,
+            'mime' => $mime,
+            'data' => $data,
             'found' => $path
         );
     }
 
     public function getCoverItem()
     {
-        $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
+        $nodes = $this->meta_xpath->query('//opf:metadata/opf:meta[@name="cover"]');
         if (!$nodes->length) {
-            return NULL;
+            return null;
         }
 
         $coverid = (String)$nodes->item(0)->attr('opf:content');
         if (!$coverid) {
-            return NULL;
+            return null;
         }
 
-        $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="' . $coverid . '"]');
+        $nodes = $this->meta_xpath->query('//opf:manifest/opf:item[@id="' . $coverid . '"]');
         if (!$nodes->length) {
-            return NULL;
+            return null;
         }
 
         return $nodes->item(0);
@@ -704,13 +724,13 @@ class EPub
 
         $path = implode('/', $pathParts);
         if ($isAbsolute) {
-            return('/' . $path);
+            return ('/' . $path);
         } else {
-            return($path);
+            return ($path);
         }
     }
 
-    private function getFullPath($file, $context = NULL)
+    private function getFullPath($file, $context = null)
     {
         $path = dirname('/' . $this->meta) . '/' . $file;
         $path = ltrim($path, '\\');
@@ -730,7 +750,7 @@ class EPub
         }
     }
 
-    public function Cover2($path=false, $mime=false)
+    public function Cover2($path = false, $mime = false)
     {
         $hascover = true;
         $item = $this->getCoverItem();
@@ -777,12 +797,12 @@ class EPub
      * @param string|null $datt Destination attribute to set instead of the node value
      * @return string
      */
-    protected function getset($item, $value=null, $att=null, $aval=null, $datt=null)
+    protected function getset($item, $value = null, $att = null, $aval = null, $datt = null)
     {
         // construct xpath
         $xpath = '//opf:metadata/' . $item;
         if ($att) {
-            if($aval) {
+            if ($aval) {
                 $xpath .= '[@' . $att . '="' . $aval . '"]';
             } else {
                 $xpath .= '[@' . $att . ']';
@@ -792,8 +812,8 @@ class EPub
         // set value
         if ($value !== null) {
             $value = htmlspecialchars($value);
-            $nodes = $this->xpath->query($xpath);
-            if ($nodes->length == 1 ) {
+            $nodes = $this->meta_xpath->query($xpath);
+            if ($nodes->length == 1) {
                 if ($value === '') {
                     // the user want's to empty this value -> delete the node
                     $nodes->item(0)->delete();
@@ -814,7 +834,7 @@ class EPub
                 }
                 // readd them
                 if ($value) {
-                    $parent = $this->xpath->query('//opf:metadata')->item(0);
+                    $parent = $this->meta_xpath->query('//opf:metadata')->item(0);
 
                     $node = $parent->newChild($item);
                     /** @var EPubDOMElement $node */
@@ -833,7 +853,7 @@ class EPub
         }
 
         // get value
-        $nodes = $this->xpath->query($xpath);
+        $nodes = $this->meta_xpath->query($xpath);
         if ($nodes->length) {
             if ($datt) {
                 return $nodes->item(0)->attr($datt);
@@ -851,8 +871,8 @@ class EPub
     protected function no_cover()
     {
         return array(
-            'data'  => base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAEALAAAAAABAAEAAAIBTAA7'),
-            'mime'  => 'image/gif',
+            'data' => base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAEALAAAAAABAAEAAAIBTAA7'),
+            'mime' => 'image/gif',
             'found' => false
         );
     }
@@ -865,7 +885,7 @@ class EPub
      */
     protected function reparse()
     {
-        $this->xml->loadXML($this->xml->saveXML());
-        $this->xpath = new EPubDOMXPath($this->xml);
+        $this->meta_xml->loadXML($this->meta_xml->saveXML());
+        $this->meta_xpath = new EPubDOMXPath($this->meta_xml);
     }
 }

@@ -11,12 +11,12 @@ namespace splitbrain\epubmeta;
 class EPubDOMElement extends \DOMElement
 {
     public $namespaces = array(
-        'n'   => 'urn:oasis:names:tc:opendocument:xmlns:container',
+        'n' => 'urn:oasis:names:tc:opendocument:xmlns:container',
         'opf' => 'http://www.idpf.org/2007/opf',
-        'dc'  => 'http://purl.org/dc/elements/1.1/',
+        'dc' => 'http://purl.org/dc/elements/1.1/',
     );
 
-    public function __construct($name, $value='', $namespaceURI='')
+    public function __construct($name, $value = '', $namespaceURI = '')
     {
         list($ns, $name) = $this->splitns($name);
         $value = htmlspecialchars($value);
@@ -34,14 +34,14 @@ class EPubDOMElement extends \DOMElement
      * @param string $value
      * @return \DOMNode
      */
-    public function newChild($name, $value='')
+    public function newChild($name, $value = '')
     {
         $nsuri = '';
         list($ns, $local) = $this->splitns($name);
         if ($ns) {
             $nsuri = $this->namespaces[$ns];
             if ($this->isDefaultNamespace($nsuri)) {
-                $name  = $local;
+                $name = $local;
                 $nsuri = '';
             }
         }
@@ -69,7 +69,7 @@ class EPubDOMElement extends \DOMElement
     /**
      * Simple EPub namespace aware attribute accessor
      */
-    public function attr($attr, $value=null)
+    public function attr($attr, $value = null)
     {
         list($ns, $attr) = $this->splitns($attr);
 

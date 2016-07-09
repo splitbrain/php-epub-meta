@@ -4,30 +4,33 @@ namespace splitbrain\epubmeta\test;
 
 use splitbrain\epubmeta\EPub;
 
-class EPubTest extends \PHPUnit_Framework_TestCase {
+class EPubTest extends \PHPUnit_Framework_TestCase
+{
     /** @var  EPub */
     protected $epub;
 
-    protected function setUp(){
+    protected function setUp()
+    {
         // sometime I might have accidentally broken the test file
-        if(filesize(realpath( dirname( __FILE__ ) ) . '/test.epub') != 768780){
+        if (filesize(realpath(dirname(__FILE__)) . '/test.epub') != 768780) {
             die('test.epub has wrong size, make sure it\'s unmodified');
         }
 
         // we work on a copy to test saving
-        if(!copy(realpath( dirname( __FILE__ ) ) . '/test.epub', realpath( dirname( __FILE__ ) ) . '/test.copy.epub')){
+        if (!copy(realpath(dirname(__FILE__)) . '/test.epub', realpath(dirname(__FILE__)) . '/test.copy.epub')) {
             die('failed to create copy of the test book');
         }
 
-        $this->epub = new EPub(realpath( dirname( __FILE__ ) ) . '/test.copy.epub');
+        $this->epub = new EPub(realpath(dirname(__FILE__)) . '/test.copy.epub');
     }
 
     public static function tearDownAfterClass()
     {
-        unlink(realpath( dirname( __FILE__ ) ) . '/test.copy.epub');
+        unlink(realpath(dirname(__FILE__)) . '/test.copy.epub');
     }
 
-    public function testAuthors(){
+    public function testAuthors()
+    {
         // read curent value
         $this->assertEquals(
             array('Shakespeare, William' => 'William Shakespeare'),
@@ -90,7 +93,8 @@ class EPubTest extends \PHPUnit_Framework_TestCase {
         );
     }
 
-    public function testTitle(){
+    public function testTitle()
+    {
         // get current value
         $this->assertEquals(
             'Romeo and Juliet',
@@ -122,10 +126,11 @@ class EPubTest extends \PHPUnit_Framework_TestCase {
         );
     }
 
-    public function testSubject(){
+    public function testSubject()
+    {
         // get current values
         $this->assertEquals(
-            array('Fiction','Drama','Romance'),
+            array('Fiction', 'Drama', 'Romance'),
             $this->epub->Subjects()
         );
 
@@ -137,7 +142,7 @@ class EPubTest extends \PHPUnit_Framework_TestCase {
 
         // set new values with String
         $this->assertEquals(
-            array('Fiction','Drama','Romance'),
+            array('Fiction', 'Drama', 'Romance'),
             $this->epub->Subjects('Fiction, Drama, Romance')
         );
 
@@ -149,17 +154,16 @@ class EPubTest extends \PHPUnit_Framework_TestCase {
 
         // set new values with array
         $this->assertEquals(
-            array('Fiction','Drama','Romance'),
-            $this->epub->Subjects(array('Fiction','Drama','Romance'))
+            array('Fiction', 'Drama', 'Romance'),
+            $this->epub->Subjects(array('Fiction', 'Drama', 'Romance'))
         );
 
         // check escaping
         $this->assertEquals(
-            array('Fiction','Drama&nbsp;','Romance'),
-            $this->epub->Subjects(array('Fiction','Drama&nbsp;','Romance'))
+            array('Fiction', 'Drama&nbsp;', 'Romance'),
+            $this->epub->Subjects(array('Fiction', 'Drama&nbsp;', 'Romance'))
         );
     }
-
 
     /*public function testCover(){
         // read current cover

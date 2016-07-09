@@ -10,15 +10,12 @@ namespace splitbrain\epubmeta;
 
 class EPubDOMXPath extends \DOMXPath
 {
-    public function __construct(\DOMDocument $doc)
+    public function __construct(EpubDOMDocument $doc)
     {
         parent::__construct($doc);
 
-        if (is_a($doc->documentElement, '\\splitbrain\\epubmeta\\EPubDOMElement'))
-        {
-            foreach ($doc->documentElement->namespaces as $ns => $url) {
-                $this->registerNamespace($ns, $url);
-            }
+        foreach ($doc->documentElement->namespaces as $ns => $url) {
+            $this->registerNamespace($ns, $url);
         }
     }
 
@@ -29,7 +26,8 @@ class EPubDOMXPath extends \DOMXPath
      * @param \DOMNode $contextnode
      * @return EpubDOMNodeList
      */
-    public function query($expression, $contextnode = null) {
+    public function query($expression, $contextnode = null)
+    {
         return parent::query($expression, $contextnode);
     }
 
