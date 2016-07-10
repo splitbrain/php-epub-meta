@@ -79,12 +79,35 @@ class EPub
     }
 
     /**
-     * file name getter
+     * Lists all files from the manifest
+     *
+     * @return array
      */
-    public function file()
+    protected function readManifest()
     {
-        return $this->file;
+        $manifest = array();
+        $nodes = $this->meta_xpath->query('//opf:manifest/opf:item');
+
+        foreach ($nodes as $node) {
+            /** @var EPubDOMElement $node */
+            $file = $node->attr('opf:href');
+            if ($file === '') {
+                continue;
+            }
+            $file = $this->getFullPath($file);
+
+            $manifest[$file] = array(
+                'id' => $node->attr('id'),
+                'mime' => $node->attr('opf:media-type'),
+                'exists' => (bool)$this->zip->FileExists($file),
+                'path' => $file
+            );
+        }
+
+        return $manifest;
     }
+
+
 
     /**
      * Close the epub file
@@ -450,51 +473,13 @@ class EPub
     #region Book Attribute Getters
 
     /**
-     * Lists all files from the manifest
-     *
-     * @return array
+     * The path to the currently loaded EPub
      */
-    protected function readManifest()
+    public function getEPubLocation()
     {
-        $manifest = array();
-        $nodes = $this->meta_xpath->query('//opf:manifest/opf:item');
-
-        foreach ($nodes as $node) {
-            /** @var EPubDOMElement $node */
-            $file = $node->attr('opf:href');
-            if ($file === '') {
-                continue;
-            }
-            $file = $this->getFullPath($file);
-
-            $manifest[$file] = array(
-                'id' => $node->attr('id'),
-                'mime' => $node->attr('opf:media-type'),
-                'exists' => (bool)$this->zip->FileExists($file),
-                'path' => $file
-            );
-        }
-
-        return $manifest;
+        return $this->file;
     }
 
-    /**
-     * Returns info about the given file from the manifest
-     *
-     * @param $path
-     * @return array
-     */
-    public function getFileInfo($path)
-    {
-        if ($this->manifest === null) {
-            $this->manifest = $this->readManifest();
-        }
-
-        if (isset($this->manifest[$path])) {
-            return $this->manifest[$path];
-        }
-        return array('id' => '', 'mime' => '', 'exists' => false, 'file' => $path);
-    }
 
     /**
      * Returns the Table of Contents
@@ -502,7 +487,7 @@ class EPub
      * @return array
      * @throws \Exception
      */
-    public function readTOC()
+    public function getToc()
     {
         $contents = array();
 
@@ -535,20 +520,21 @@ class EPub
     }
 
     /**
-     * Enhances the a single TOC entry with data from the manifest
+     * Returns info about the given file from the manifest
      *
-     * @param EPubDOMElement $node an ncx:navPoint entry
-     * @param EPubDOMXPath $toc_xpath
+     * @param $path
      * @return array
      */
-    protected function mkTocEntry(EPubDOMElement $node, EPubDOMXPath $toc_xpath)
+    public function getFileInfo($path)
     {
-        $title = $toc_xpath->query('ncx:navLabel/ncx:text', $node)->item(0)->nodeValue;
-        $src = $toc_xpath->query('ncx:content', $node)->item(0)->attr('src');
+        if ($this->manifest === null) {
+            $this->manifest = $this->readManifest();
+        }
 
-        $file = $this->getFullPath($src);
-
-        return array_merge(array('title' => $title, 'src' => $src), $this->getFileInfo($file));
+        if (isset($this->manifest[$path])) {
+            return $this->manifest[$path];
+        }
+        return array('id' => '', 'mime' => '', 'exists' => false, 'file' => $path);
     }
 
     /**
@@ -568,6 +554,28 @@ class EPub
         }
 
         return $this->zip->FileRead($path);
+    }
+
+    #endregion
+
+
+    #region Internal Functions
+
+    /**
+     * Enhances the a single TOC entry with data from the manifest
+     *
+     * @param EPubDOMElement $node an ncx:navPoint entry
+     * @param EPubDOMXPath $toc_xpath
+     * @return array
+     */
+    protected function mkTocEntry(EPubDOMElement $node, EPubDOMXPath $toc_xpath)
+    {
+        $title = $toc_xpath->query('ncx:navLabel/ncx:text', $node)->item(0)->nodeValue;
+        $src = $toc_xpath->query('ncx:content', $node)->item(0)->attr('src');
+
+        $file = $this->getFullPath($src);
+
+        return array_merge(array('title' => $title, 'src' => $src), $this->getFileInfo($file));
     }
 
     #endregion

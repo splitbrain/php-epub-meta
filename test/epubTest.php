@@ -46,7 +46,7 @@ class EPubTest extends \PHPUnit_Framework_TestCase
 
     public function testToc()
     {
-        $toc = $this->epub->readTOC();
+        $toc = $this->epub->getToc();
 
         $this->assertEquals(34, count($toc));
         $this->assertEquals(
@@ -59,6 +59,40 @@ class EPubTest extends \PHPUnit_Framework_TestCase
                 'path' => 'OPS/main0.xml'
             )
             , $toc[3]);
+    }
+    
+    public function testFileReading()
+    {
+        $expect = '@import "page.css";
+
+body {padding: 0;}
+div.aboutauthor {text-align: left;}
+
+div.also {
+  text-align: left;
+  padding-top: 5%;}
+
+a {
+  color: #000000;
+  text-decoration: none;}
+
+p {
+  margin-top: 0.0em;
+  margin-bottom: 0.0em;
+  text-indent: 1.0em;
+  text-align: justify;}';
+
+        $data = $this->epub->getFile('OPS/css/about.css');
+
+        $this->assertEquals($expect, $data);
+    }
+
+    /**
+     * @expectedException \Exception
+     */
+    public function testFileFailed()
+    {
+        $this->epub->getFile('does/not/exist');
     }
 
     public function testAuthors()
