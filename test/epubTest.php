@@ -60,7 +60,7 @@ class EPubTest extends \PHPUnit_Framework_TestCase
             )
             , $toc[3]);
     }
-    
+
     public function testFileReading()
     {
         $expect = '@import "page.css";
@@ -229,6 +229,25 @@ p {
             array('Fiction', 'Drama&nbsp;', 'Romance'),
             $this->epub->Subjects(array('Fiction', 'Drama&nbsp;', 'Romance'))
         );
+    }
+
+    public function testGetCoverFile()
+    {
+        $expect = array(
+            'id' => 'book-cover',
+            'mime' => 'image/png',
+            'exists' => true,
+            'path' => 'OPS/images/cover.png',
+        );
+        $cover = $this->epub->getCoverFile();
+        $this->assertNotNull($cover);
+        $this->assertEquals($expect, $cover);
+    }
+
+    public function testClearCover()
+    {
+        $this->epub->clearCover();
+        $this->assertNull($this->epub->getCoverFile());
     }
 
     /*public function testCover(){

@@ -107,8 +107,6 @@ class EPub
         return $manifest;
     }
 
-
-
     /**
      * Close the epub file
      */
@@ -480,7 +478,6 @@ class EPub
         return $this->file;
     }
 
-
     /**
      * Returns the Table of Contents
      *
@@ -538,6 +535,66 @@ class EPub
     }
 
     /**
+     * Get info on the cover image if any
+     *
+     * Returns the same info as getFileInfo() for the cover image if any. Returns null
+     * if there's no cover image.
+     *
+     * @return array|null
+     */
+    public function getCoverFile()
+    {
+        $nodes = $this->meta_xpath->query('//opf:metadata/opf:meta[@name="cover"]');
+        if (!$nodes->length) {
+            return null;
+        }
+
+        $coverid = (String)$nodes->item(0)->attr('opf:content');
+        if (!$coverid) {
+            return null;
+        }
+
+        $nodes = $this->meta_xpath->query('//opf:manifest/opf:item[@id="' . $coverid . '"]');
+        if (!$nodes->length) {
+            return null;
+        }
+
+        return $this->getFileInfo($this->getFullPath($nodes->item(0)->attr('href')));
+    }
+
+    /**
+     * Removes the cover image if there's one
+     */
+    public function clearCover()
+    {
+        $cover = $this->getCoverFile();
+        if ($cover === null) {
+            return;
+        }
+
+        // remove current pointer
+        $nodes = $this->meta_xpath->query('//opf:metadata/opf:meta[@name="cover"]');
+        foreach ($nodes as $node) {
+            /** @var EPubDOMElement $node */
+            $node->delete();
+        }
+        // remove previous manifest entries if they where made by us
+        $nodes = $this->meta_xpath->query('//opf:manifest/opf:item[@id="php-epub-meta-cover"]');
+        foreach ($nodes as $node) {
+            /** @var EPubDOMElement $node */
+            $node->delete();
+        }
+
+        // FIXME we should remove the actual file from the archive if it was added by us,
+        //but the zip library used does not support deleting files, yet
+    }
+
+    public function setCoverFile($path)
+    {
+
+    }
+
+    /**
      * Read the contents of a file witin the epub
      *
      * You probably want to use getFileInfo() first to check if the file exists and get
@@ -557,7 +614,6 @@ class EPub
     }
 
     #endregion
-
 
     #region Internal Functions
 
@@ -670,26 +726,6 @@ class EPub
         );
     }
 
-    public function getCoverItem()
-    {
-        $nodes = $this->meta_xpath->query('//opf:metadata/opf:meta[@name="cover"]');
-        if (!$nodes->length) {
-            return null;
-        }
-
-        $coverid = (String)$nodes->item(0)->attr('opf:content');
-        if (!$coverid) {
-            return null;
-        }
-
-        $nodes = $this->meta_xpath->query('//opf:manifest/opf:item[@id="' . $coverid . '"]');
-        if (!$nodes->length) {
-            return null;
-        }
-
-        return $nodes->item(0);
-    }
-
     public function combine($a, $b)
     {
         $isAbsolute = false;
@@ -744,7 +780,7 @@ class EPub
 
     public function updateForKepub()
     {
-        $item = $this->getCoverItem();
+        $item = $this->getCoverFile();
         if (!is_null($item)) {
             $item->attr('opf:properties', 'cover-image');
         }
@@ -753,7 +789,7 @@ class EPub
     public function Cover2($path = false, $mime = false)
     {
         $hascover = true;
-        $item = $this->getCoverItem();
+        $item = $this->getCoverFile();
         if (is_null($item)) {
             $hascover = false;
         } else {
