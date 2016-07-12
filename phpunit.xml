@@ -3,7 +3,8 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/4.5/phpunit.xsd"
     bootstrap="./vendor/autoload.php"
-    verbose="true">
+    verbose="true"
+    colors="true">
     <filter>
         <whitelist processUncoveredFilesFromWhitelist="false">
             <!-- this is the path of the files included in your clover report -->
