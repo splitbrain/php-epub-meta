@@ -531,7 +531,7 @@ class EPub
         if (isset($this->manifest[$path])) {
             return $this->manifest[$path];
         }
-        return array('id' => '', 'mime' => '', 'exists' => false, 'file' => $path);
+        return array('id' => '', 'mime' => '', 'exists' => false, 'path' => $path);
     }
 
     /**
@@ -589,9 +589,46 @@ class EPub
         //but the zip library used does not support deleting files, yet
     }
 
-    public function setCoverFile($path)
+    /**
+     * Set a new cover image
+     *
+     * @param string $path path to the image to set on the local file system
+     * @param string $mime mime type of that image (like 'image/jpeg')
+     * @throws \Exception when the given image can't be read
+     */
+    public function setCoverFile($path, $mime)
     {
+        $this->clearCover();
+        $data = file_get_contents($path);
+        if ($data === false) {
+            throw new \Exception("Couldn't load data from $path");
+        }
 
+        /** @var EPubDOMElement $node */
+
+        // add pointer
+        $parent = $this->meta_xpath->query('//opf:metadata')->item(0);
+        $node = $parent->newChild('opf:meta');
+        $node->attr('opf:name', 'cover');
+        $node->attr('opf:content', 'php-epub-meta-cover');
+
+        // add manifest
+        $parent = $this->meta_xpath->query('//opf:manifest')->item(0);
+        $node = $parent->newChild('opf:item');
+        $node->attr('id', 'php-epub-meta-cover');
+        $node->attr('opf:href', 'php-epub-meta-cover.img');
+        $node->attr('opf:media-type', $mime);
+
+        $full = $this->getFullPath('php-epub-meta-cover.img');
+
+        // remember path for save action
+        if ($this->zip->FileExists($full)) {
+            $this->zip->FileReplace($full, $data);
+        } else {
+            $this->zip->FileAdd($full, $data);
+        }
+
+        $this->reparse();
     }
 
     /**
@@ -923,5 +960,6 @@ class EPub
     {
         $this->meta_xml->loadXML($this->meta_xml->saveXML());
         $this->meta_xpath = new EPubDOMXPath($this->meta_xml);
+        $this->manifest = null;
     }
 }

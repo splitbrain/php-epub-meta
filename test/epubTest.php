@@ -250,6 +250,25 @@ p {
         $this->assertNull($this->epub->getCoverFile());
     }
 
+    public function testSetCoverFile()
+    {
+        $this->epub->setCoverFile(__DIR__ . '/test.jpg', 'image/jpeg');
+        $cover = $this->epub->getCoverFile();
+
+        $this->assertNotNull($cover);
+
+        $this->assertEquals(
+            array(
+                'id' => 'php-epub-meta-cover',
+                'mime' => 'image/jpeg',
+                'exists' => false,
+                'path' => 'OPS/php-epub-meta-cover.img'
+
+            ),
+            $cover
+        );
+    }
+
     /*public function testCover(){
         // read current cover
         $cover = $this->epub->Cover2();
