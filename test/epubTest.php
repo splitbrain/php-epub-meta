@@ -10,16 +10,16 @@ class EPubTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         // sometime I might have accidentally broken the test file
-        if (filesize(realpath(dirname(__FILE__)) . '/test.epub') != 768780) {
+        if (filesize(realpath(__DIR__) . '/test.epub') != 768780) {
             die('test.epub has wrong size, make sure it\'s unmodified');
         }
 
         // we work on a copy to test saving
-        if (!copy(realpath(dirname(__FILE__)) . '/test.epub', realpath(dirname(__FILE__)) . '/test.copy.epub')) {
+        if (!copy(realpath(__DIR__) . '/test.epub', realpath(__DIR__) . '/test.copy.epub')) {
             die('failed to create copy of the test book');
         }
 
-        $this->epub = new EPub(realpath(dirname(__FILE__)) . '/test.copy.epub');
+        $this->epub = new EPub(realpath(__DIR__) . '/test.copy.epub');
     }
 
     public static function tearDownAfterClass()
@@ -268,6 +268,27 @@ p {
             $cover
         );
     }
+
+    public function testCancel()
+    {
+        $this->epub->setCoverFile(__DIR__ . '/test.jpg', 'image/jpeg');
+        $this->epub->Title('fooooooooooooooooooooooooooooooooooooo');
+        $this->epub->close();
+
+        clearstatcache($this->epub->getEPubLocation());
+        $this->assertEquals(768780, filesize($this->epub->getEPubLocation()));
+    }
+
+    public function testSave()
+    {
+        $this->epub->setCoverFile(__DIR__ . '/test.jpg', 'image/jpeg');
+        $this->epub->Title('fooooooooooooooooooooooooooooooooooooo');
+        $this->epub->save();
+
+        clearstatcache($this->epub->getEPubLocation());
+        $this->assertNotEquals(768780, filesize($this->epub->getEPubLocation()));
+    }
+
 
     /*public function testCover(){
         // read current cover

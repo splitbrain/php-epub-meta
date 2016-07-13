@@ -112,8 +112,6 @@ class EPub
      */
     public function close()
     {
-        $this->zip->FileCancelModif($this->meta);
-        // TODO: Add cancelation of cover image
         $this->zip->Close();
     }
 
@@ -131,27 +129,30 @@ class EPub
     }
 
     /**
-     * Writes back all meta data changes
+     * Writes back all changes to the epub
      */
     public function save()
     {
-        $this->download();
+        $data = $this->download();
         $this->zip->Close();
+        file_put_contents($this->getEPubLocation(), $data);
     }
 
     /**
      * Get the updated epub
+     *
+     * @param null|string $file
+     * @return string|bool
      */
-    public function download($file = false)
+    public function download($file = null)
     {
         $this->zip->FileReplace($this->meta, $this->meta_xml->saveXML());
-        // add the cover image
-        if ($this->imagetoadd) {
-            $this->zip->FileReplace($this->coverpath, file_get_contents($this->imagetoadd));
-            $this->imagetoadd = '';
-        }
+
         if ($file) {
-            $this->zip->Flush(TBSZIP_DOWNLOAD, $file);
+            return $this->zip->Flush(TBSZIP_DOWNLOAD, $file);
+        } else {
+            echo $this->zip->Flush(TBSZIP_STRING);
+            return $this->zip->OutputSrc; // ugly but currently the only interface in the ZIP lib
         }
     }
 
@@ -587,6 +588,7 @@ class EPub
 
         // FIXME we should remove the actual file from the archive if it was added by us,
         //but the zip library used does not support deleting files, yet
+
     }
 
     /**
