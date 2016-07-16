@@ -27,7 +27,6 @@ class EPub
     const IDENT_CALIBRE = 'CALIBRE';
     #endregion
 
-
     /** @var string Location of the meta package within the epub */
     protected $meta;
     /** @var EPubDOMDocument Parsed XML of the meta package */
@@ -163,6 +162,26 @@ class EPub
             $this->zip->FileReplace('iTunesArtwork', false);
         }
     }
+
+    /**
+     * Makes sure the epub3 cover-image attribute is set
+     */
+    public function updateForKepub()
+    {
+        $cover = $this->getCoverFile();
+        if ($cover === null) {
+            return;
+        }
+
+        $id = $cover['id'];
+        $nodes = $this->meta_xpath->query('//opf:manifest/opf:item[@id="' . $id . '"]');
+        $node = $nodes->item(0);
+        if (!$node) {
+            return;
+        }
+        $node->attr('opf:properties', 'cover-image');
+    }
+
 
     #region Book Attribute Getter/Setters
 
@@ -573,6 +592,7 @@ class EPub
         $node->attr('id', 'php-epub-meta-cover');
         $node->attr('opf:href', 'php-epub-meta-cover.img');
         $node->attr('opf:media-type', $mime);
+        $node->attr('opf:properties', 'cover-image');
 
         $full = $this->getFullPath('php-epub-meta-cover.img');
 
@@ -628,64 +648,20 @@ class EPub
 
     #endregion
 
-    public function combine($a, $b)
-    {
-        $isAbsolute = false;
-        if ($a[0] == '/') {
-            $isAbsolute = true;
-        }
-
-        if ($b[0] == '/') {
-            throw new \InvalidArgumentException('Second path part must not start with /');
-        }
-
-        $splittedA = preg_split('#/#', $a);
-        $splittedB = preg_split('#/#', $b);
-
-        $pathParts = array();
-        $mergedPath = array_merge($splittedA, $splittedB);
-
-        foreach ($mergedPath as $item) {
-            if ($item == null || $item == '' || $item == '.') {
-                continue;
-            }
-
-            if ($item == '..') {
-                array_pop($pathParts);
-                continue;
-            }
-
-            array_push($pathParts, $item);
-        }
-
-        $path = implode('/', $pathParts);
-        if ($isAbsolute) {
-            return ('/' . $path);
-        } else {
-            return ($path);
-        }
-    }
-
-    private function getFullPath($file, $context = null)
+    /**
+     * Resolves paths relative to the meta container location
+     *
+     * @param string $file relative path
+     * @return string full path within the zip
+     */
+    private function getFullPath($file)
     {
         list($file) = explode('#', $file); // strip anchors
-
         $path = dirname('/' . $this->meta) . '/' . $file;
         $path = ltrim($path, '\\');
         $path = ltrim($path, '/');
-        if (!empty($context)) {
-            $path = $this->combine(dirname($path), $context);
-        }
-        //error_log ("FullPath : $path ($file / $context)");
-        return $path;
-    }
 
-    public function updateForKepub()
-    {
-        $item = $this->getCoverFile();
-        if (!is_null($item)) {
-            $item->attr('opf:properties', 'cover-image');
-        }
+        return $path;
     }
 
     /**
