@@ -281,42 +281,50 @@ p {
 
     public function testSave()
     {
+        $epubfile = $this->epub->getEPubLocation();
+
         $this->epub->setCoverFile(__DIR__ . '/test.jpg', 'image/jpeg');
         $this->epub->Title('fooooooooooooooooooooooooooooooooooooo');
         $this->epub->save();
 
         clearstatcache($this->epub->getEPubLocation());
-        $this->assertNotEquals(768780, filesize($this->epub->getEPubLocation()));
+        $this->assertNotEquals(768780, filesize($epubfile));
+
+        // reload the file
+        $this->epub = new EPub($epubfile);
+        $this->assertEquals('fooooooooooooooooooooooooooooooooooooo', $this->epub->Title());
+
+        $this->assertEquals(array(
+            'id' => 'php-epub-meta-cover',
+            'mime' => 'image/jpeg',
+            'exists' => true,
+            'path' => 'OPS/php-epub-meta-cover.img',
+
+        ), $this->epub->getCoverFile());
+
+        $this->assertEquals(
+            file_get_contents(__DIR__ . '/test.jpg'),
+            $this->epub->getFile('OPS/php-epub-meta-cover.img')
+        );
+
+        // test cover removing
+        $this->epub->clearCover();
+        $this->assertNull($this->epub->getCoverFile());
+        // our image should be gone
+        $this->assertEquals(array(
+            'id' => '',
+            'mime' => '',
+            'exists' => false,
+            'path' => 'OPS/php-epub-meta-cover.img',
+        ), $this->epub->getFileInfo('OPS/php-epub-meta-cover.img'));
+        // the original image should still be there, even though it's not registered as cover anymore
+        $this->assertEquals(array(
+            'id' => 'book-cover',
+            'mime' => 'image/png',
+            'exists' => true,
+            'path' => 'OPS/images/cover.png',
+        ), $this->epub->getFileInfo('OPS/images/cover.png'));
+
     }
 
-
-    /*public function testCover(){
-        // read current cover
-        $cover = $this->epub->Cover2();
-        $this->assertEquals($cover['mime'],'image/png');
-        $this->assertEquals($cover['found'],'OPS/images/cover.png');
-        $this->assertEquals(strlen($cover['data']), 657911);
-
-        // // delete cover // Don't work anymore
-        // $cover = $this->epub->Cover('');
-        // $this->assertEquals($cover['mime'],'image/gif');
-        // $this->assertEquals($cover['found'],false);
-        // $this->assertEquals(strlen($cover['data']), 42);
-
-        // // set new cover (will return a not-found as it's not yet saved)
-        $cover = $this->epub->Cover2(realpath( dirname( __FILE__ ) ) . '/test.jpg','image/jpeg');
-        // $this->assertEquals($cover['mime'],'image/jpeg');
-        // $this->assertEquals($cover['found'],'OPS/php-epub-meta-cover.img');
-        // $this->assertEquals(strlen($cover['data']), 0);
-
-        // save
-        $this->epub->save();
-        //$this->epub = new EPub(realpath( dirname( __FILE__ ) ) . '/test.copy.epub');
-
-        // read now changed cover
-        $cover = $this->epub->Cover2();
-        $this->assertEquals($cover['mime'],'image/jpeg');
-        $this->assertEquals($cover['found'],'OPS/images/cover.png');
-        $this->assertEquals(strlen($cover['data']), filesize(realpath( dirname( __FILE__ ) ) . '/test.jpg'));
-    }*/
 }

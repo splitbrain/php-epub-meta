@@ -100,7 +100,7 @@ class EPub
                 'id' => $node->attr('id'),
                 'mime' => $node->attr('opf:media-type'),
                 'exists' => (bool)$this->zip->FileExists($file),
-                'path' => $file
+                'path' => $file,
             );
         }
 
@@ -565,9 +565,14 @@ class EPub
 
     /**
      * Removes the cover image if there's one
+     *
+     * If the actual image file was added by this library it will be removed. Otherwise only the
+     * reference to it is removed from the metadata, since the same image might be referenced
+     * by other parts of the epub file.
      */
     public function clearCover()
     {
+        // do nothing if there's no cover currently
         $cover = $this->getCoverFile();
         if ($cover === null) {
             return;
@@ -585,10 +590,11 @@ class EPub
             /** @var EPubDOMElement $node */
             $node->delete();
         }
-
-        // FIXME we should remove the actual file from the archive if it was added by us,
-        //but the zip library used does not support deleting files, yet
-
+        // remove the actual file if it was added by us
+        if($cover['id'] == 'php-epub-meta-cover') {
+            $this->zip->FileReplace($cover['path'], false);
+            $this->manifest = null;
+        }
     }
 
     /**
@@ -675,96 +681,6 @@ class EPub
 
     #endregion
 
-    /**
-     * Read the cover data
-     *
-     * Returns an associative array with the following keys:
-     *
-     *   mime  - filetype (usually image/jpeg)
-     *   data  - the binary image data
-     *   found - the internal path, or false if no image is set in epub
-     *
-     * When no image is set in the epub file, the binary data for a transparent
-     * GIF pixel is returned.
-     *
-     * When adding a new image this function return no or old data because the
-     * image contents are not in the epub file, yet. The image will be added when
-     * the save() method is called.
-     *
-     * @param  string $path local filesystem path to a new cover image
-     * @param  string $mime mime type of the given file
-     * @return array
-     */
-    public function Cover($path = false, $mime = false)
-    {
-        // set cover
-        if ($path !== false) {
-            // remove current pointer
-            $nodes = $this->meta_xpath->query('//opf:metadata/opf:meta[@name="cover"]');
-            foreach ($nodes as $node) {
-                /** @var EPubDOMElement $node */
-                $node->delete();
-            }
-            // remove previous manifest entries if they where made by us
-            $nodes = $this->meta_xpath->query('//opf:manifest/opf:item[@id="php-epub-meta-cover"]');
-            foreach ($nodes as $node) {
-                /** @var EPubDOMElement $node */
-                $node->delete();
-            }
-
-            if ($path) {
-                // add pointer
-                $parent = $this->meta_xpath->query('//opf:metadata')->item(0);
-                $node = $parent->newChild('opf:meta');
-                $node->attr('opf:name', 'cover');
-                $node->attr('opf:content', 'php-epub-meta-cover');
-
-                // add manifest
-                $parent = $this->meta_xpath->query('//opf:manifest')->item(0);
-                $node = $parent->newChild('opf:item');
-                $node->attr('id', 'php-epub-meta-cover');
-                $node->attr('opf:href', 'php-epub-meta-cover.img');
-                $node->attr('opf:media-type', $mime);
-
-                // remember path for save action
-                $this->imagetoadd = $path;
-            }
-
-            $this->reparse();
-        }
-
-        // load cover
-        $nodes = $this->meta_xpath->query('//opf:metadata/opf:meta[@name="cover"]');
-        if (!$nodes->length) {
-            return $this->no_cover();
-        }
-        $coverid = (String)$nodes->item(0)->attr('opf:content');
-        if (!$coverid) {
-            return $this->no_cover();
-        }
-
-        $nodes = $this->meta_xpath->query('//opf:manifest/opf:item[@id="' . $coverid . '"]');
-        if (!$nodes->length) {
-            return $this->no_cover();
-        }
-        $mime = $nodes->item(0)->attr('opf:media-type');
-        $path = $nodes->item(0)->attr('opf:href');
-        $path = dirname('/' . $this->meta) . '/' . $path; // image path is relative to meta file
-        $path = ltrim($path, '/');
-
-        $zip = new \ZipArchive();
-        if (!@$zip->open($this->file)) {
-            throw new \Exception('Failed to read epub file');
-        }
-        $data = $zip->getFromName($path);
-
-        return array(
-            'mime' => $mime,
-            'data' => $data,
-            'found' => $path
-        );
-    }
-
     public function combine($a, $b)
     {
         $isAbsolute = false;
@@ -822,41 +738,6 @@ class EPub
         $item = $this->getCoverFile();
         if (!is_null($item)) {
             $item->attr('opf:properties', 'cover-image');
-        }
-    }
-
-    public function Cover2($path = false, $mime = false)
-    {
-        $hascover = true;
-        $item = $this->getCoverFile();
-        if (is_null($item)) {
-            $hascover = false;
-        } else {
-            $mime = $item->attr('opf:media-type');
-            $this->coverpath = $item->attr('opf:href');
-            $this->coverpath = dirname('/' . $this->meta) . '/' . $this->coverpath; // image path is relative to meta file
-            $this->coverpath = ltrim($this->coverpath, '\\');
-            $this->coverpath = ltrim($this->coverpath, '/');
-        }
-
-        // set cover
-        if ($path !== false) {
-            if (!$hascover) {
-                return; // TODO For now only update
-            }
-
-            if ($path) {
-                $item->attr('opf:media-type', $mime);
-
-                // remember path for save action
-                $this->imagetoadd = $path;
-            }
-
-            $this->reparse();
-        }
-
-        if (!$hascover) {
-            return $this->no_cover();
         }
     }
 
