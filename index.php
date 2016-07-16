@@ -1,6 +1,8 @@
 <?php
     // modify this to point to your book directory
-    $bookdir = '/home/andi/Dropbox/ebooks/';
+use splitbrain\epubmeta\EPub;
+
+$bookdir = '/home/andi/Dropbox/ebooks/';
 
     // proxy google requests
     if (isset($_GET['api'])) {
@@ -24,9 +26,9 @@
 
     // return image data
     if (isset($_REQUEST['img']) && isset($epub)) {
-        $img = $epub->Cover();
+        $img = $epub->getCoverFile();
         header('Content-Type: ' . $img['mime']);
-        echo $img['data'];
+        echo $epub->getFile($img['path']);
         exit;
     }
 
@@ -37,7 +39,7 @@
         $epub->Language($_POST['language']);
         $epub->Publisher($_POST['publisher']);
         $epub->Copyright($_POST['copyright']);
-        $epub->ISBN($_POST['isbn']);
+        $epub->Identifier(EPub::IDENT_ISBN);
         $epub->Subjects($_POST['subjects']);
 
         $authors = array();
@@ -67,7 +69,7 @@
         if ($cover) {
             $info = @getimagesize($cover);
             if (preg_match('/^image\/(gif|jpe?g|png)$/', $info['mime'])) {
-                $epub->Cover($cover, $info['meta']);
+                $epub->setCoverFile($cover, $info['mime']);
             } else {
                 $error = 'Not a valid image file' . $cover;
             }
@@ -90,7 +92,7 @@
         $title  = $epub->Title();
         $new    = to_file($author . '-' . $title);
         $new    = $bookdir . $new . '.epub';
-        $old    = $epub->file();
+        $old    = $epub->getEPubLocation();
         if (realpath($new) != realpath($old)) {
             if (!@rename($old, $new)) {
                 $new = $old; //rename failed, stay here
@@ -160,7 +162,7 @@
             <tr>
                 <th>Description<br />
                     <img src="?book=<?php echo htmlspecialchars($_REQUEST['book'])?>&amp;img=1" id="cover" width="90"
-                         class="<?php $c = $epub->Cover(); echo ($c['found']?'hasimg':'noimg')?>" />
+                         class="<?php $c = $epub->getCoverFile(); echo ($c?'hasimg':'noimg')?>" />
                 </th>
                 <td><textarea name="description"><?php echo htmlspecialchars($epub->Description())?></textarea></td>
             </tr>
@@ -182,7 +184,7 @@
             </tr>
             <tr>
                 <th>ISBN</th>
-                <td><p><input type="text" name="isbn"      value="<?php echo htmlspecialchars($epub->ISBN())?>" /></p></td>
+                <td><p><input type="text" name="isbn"      value="<?php echo htmlspecialchars($epub->Identifier(EPub::IDENT_ISBN))?>" /></p></td>
             </tr>
             <tr>
                 <th>Cover Image</th>
