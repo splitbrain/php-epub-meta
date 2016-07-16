@@ -146,6 +146,7 @@ class EPub
             return $this->zip->Flush(TBSZIP_DOWNLOAD, $file);
         } else {
             $this->zip->Flush(TBSZIP_STRING);
+            /** @noinspection PhpUndefinedFieldInspection */
             return $this->zip->OutputSrc; // ugly but currently the only interface in the ZIP lib
         }
     }
@@ -323,7 +324,7 @@ class EPub
      * @param string|null $uuid Unique identifier
      * @return string
      * @throws \Exception
-     * @todo auto add unique identifer if needed
+     * @todo auto add unique identifer if needed?
      */
     public function Uuid($uuid = null)
     {
