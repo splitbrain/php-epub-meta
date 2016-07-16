@@ -20,7 +20,7 @@ class EPub
     protected $meta_xpath;
     /** @var string The path to the epub file */
     protected $file;
-    /** @var  \clsTbsZip handles the ZIP operations on the epub file*/
+    /** @var  \clsTbsZip handles the ZIP operations on the epub file */
     protected $zip;
     /** @var  null|array The manifest data, eg. which files are available */
     protected $manifest = null;
@@ -130,7 +130,7 @@ class EPub
         if ($file) {
             return $this->zip->Flush(TBSZIP_DOWNLOAD, $file);
         } else {
-            echo $this->zip->Flush(TBSZIP_STRING);
+            $this->zip->Flush(TBSZIP_STRING);
             return $this->zip->OutputSrc; // ugly but currently the only interface in the ZIP lib
         }
     }
@@ -307,28 +307,34 @@ class EPub
      * Set or get the book's creation date
      *
      * @param string|null $date Date eg: 2012-05-19T12:54:25Z
-     * @todo use DateTime class instead of string
      * @return string
      */
     public function CreationDate($date = null)
     {
-        $res = $this->getset('dc:date', $date, 'opf:event', 'creation');
-
-        return $res;
+        return $this->Date('creation', $date);
     }
 
     /**
      * Set or get the book's modification date
      *
      * @param string|null $date Date eg: 2012-05-19T12:54:25Z
-     * @todo use DateTime class instead of string
      * @return string
      */
     public function ModificationDate($date = null)
     {
-        $res = $this->getset('dc:date', $date, 'opf:event', 'modification');
+        return $this->Date('modification', $date);
+    }
 
-        return $res;
+    /**
+     * Read or set a date
+     *
+     * @param string $type The type to set/read (modification|creation|conversion|publication|original-publication)
+     * @param string|null $date Date eg: 2012-05-19T12:54:25Z
+     * @return string
+     */
+    public function Date($type, $date = null)
+    {
+        return $this->getset('dc:date', $date, 'opf:event', $type);
     }
 
     /**
@@ -581,7 +587,7 @@ class EPub
             $node->delete();
         }
         // remove the actual file if it was added by us
-        if($cover['id'] == 'php-epub-meta-cover') {
+        if ($cover['id'] == 'php-epub-meta-cover') {
             $this->zip->FileReplace($cover['path'], false);
             $this->manifest = null;
         }

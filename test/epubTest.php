@@ -231,6 +231,12 @@ p {
         );
     }
 
+    public function testDates()
+    {
+        $this->assertEquals('1597', $this->epub->Date('original-publication'));
+        $this->assertEquals('2008-09-18', $this->epub->Date('ops-publication'));
+    }
+
     public function testGetCoverFile()
     {
         $expect = array(
