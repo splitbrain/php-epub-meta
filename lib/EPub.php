@@ -12,23 +12,16 @@ define('METADATA_FILE', 'META-INF/container.xml');
 
 class EPub
 {
-
     /** @var string Location of the meta package within the epub */
     protected $meta;
     /** @var EPubDOMDocument Parsed XML of the meta package */
     public $meta_xml;
     /** @var  EPubDOMXPath XPath access to the meta package */
     protected $meta_xpath;
-
     /** @var string The path to the epub file */
     protected $file;
-
-    /** @var  \clsTbsZip */
+    /** @var  \clsTbsZip handles the ZIP operations on the epub file*/
     protected $zip;
-    protected $coverpath = '';
-    protected $namespaces;
-    protected $imagetoadd = '';
-
     /** @var  null|array The manifest data, eg. which files are available */
     protected $manifest = null;
 
@@ -36,14 +29,13 @@ class EPub
      * Constructor
      *
      * @param string $file path to epub file to work on
-     * @param string $zipClass class to handle zip
      * @throws \Exception if metadata could not be loaded
      */
-    public function __construct($file, $zipClass = 'clsTbsZip')
+    public function __construct($file)
     {
         // open file
         $this->file = $file;
-        $this->zip = new $zipClass();
+        $this->zip = new \clsTbsZip();
         if (!$this->zip->Open($this->file)) {
             throw new \Exception('Failed to read epub file');
         }
@@ -116,19 +108,6 @@ class EPub
     }
 
     /**
-     * Remove iTunes files
-     */
-    public function cleanITunesCrap()
-    {
-        if ($this->zip->FileExists('iTunesMetadata.plist')) {
-            $this->zip->FileReplace('iTunesMetadata.plist', false);
-        }
-        if ($this->zip->FileExists('iTunesArtwork')) {
-            $this->zip->FileReplace('iTunesArtwork', false);
-        }
-    }
-
-    /**
      * Writes back all changes to the epub
      */
     public function save()
@@ -156,7 +135,18 @@ class EPub
         }
     }
 
-
+    /**
+     * Remove iTunes files
+     */
+    public function cleanITunesCrap()
+    {
+        if ($this->zip->FileExists('iTunesMetadata.plist')) {
+            $this->zip->FileReplace('iTunesMetadata.plist', false);
+        }
+        if ($this->zip->FileExists('iTunesArtwork')) {
+            $this->zip->FileReplace('iTunesArtwork', false);
+        }
+    }
 
     #region Book Attribute Getter/Setters
 
@@ -836,8 +826,8 @@ class EPub
     /**
      * Reparse the DOM tree
      *
-     * I had to rely on this because otherwise xpath failed to find the newly
-     * added nodes
+     * This is needed when new nodes are added to the DOM, otherwise XPath won't find those new
+     * nodes.
      */
     protected function reparse()
     {
