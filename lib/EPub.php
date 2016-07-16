@@ -12,6 +12,22 @@ define('METADATA_FILE', 'META-INF/container.xml');
 
 class EPub
 {
+    #region Constants
+    const DATE_MODIFICATION = 'modification';
+    const DATE_CREATION = 'creation';
+    const DATE_CONVERSION = 'conversion';
+    const DATE_PUB = 'publication';
+    const DATE_PUB_ORIG = 'original-publication';
+
+    const IDENT_URI = 'URI';
+    const IDENT_URN = 'URN';
+    const IDENT_ISBN = 'ISBN';
+    const IDENT_AMAZON = 'AMAZON';
+    const IDENT_GOOGLE = 'GOOGLE';
+    const IDENT_CALIBRE = 'CALIBRE';
+    #endregion
+
+
     /** @var string Location of the meta package within the epub */
     protected $meta;
     /** @var EPubDOMDocument Parsed XML of the meta package */
@@ -304,31 +320,9 @@ class EPub
     }
 
     /**
-     * Set or get the book's creation date
-     *
-     * @param string|null $date Date eg: 2012-05-19T12:54:25Z
-     * @return string
-     */
-    public function CreationDate($date = null)
-    {
-        return $this->Date('creation', $date);
-    }
-
-    /**
-     * Set or get the book's modification date
-     *
-     * @param string|null $date Date eg: 2012-05-19T12:54:25Z
-     * @return string
-     */
-    public function ModificationDate($date = null)
-    {
-        return $this->Date('modification', $date);
-    }
-
-    /**
      * Read or set a date
      *
-     * @param string $type The type to set/read (modification|creation|conversion|publication|original-publication)
+     * @param string $type The type to set/read - use the DATE_* constants for typical dates
      * @param string|null $date Date eg: 2012-05-19T12:54:25Z
      * @return string
      */
@@ -338,60 +332,17 @@ class EPub
     }
 
     /**
-     * Set or get the book's URI
+     * Set or get the book's Identifier
      *
-     * @param string|null $uri URI
+     * @param string $type Type of identifier, use TYPE_* constants for typical
+     * @param string|null $ident Identifier
      * @return string
      */
-    public function Uri($uri = null)
+    public function Identifier($type, $ident = null)
     {
-        $res = $this->getset('dc:identifier', $uri, 'opf:scheme', 'URI');
+        $res = $this->getset('dc:identifier', $ident, 'opf:scheme', $type);
 
         return $res;
-    }
-
-    /**
-     * Set or get the book's ISBN number
-     *
-     * @param string|null $isbn
-     * @return string
-     */
-    public function ISBN($isbn = null)
-    {
-        return $this->getset('dc:identifier', $isbn, 'opf:scheme', 'ISBN');
-    }
-
-    /**
-     * Set or get the Google Books ID
-     *
-     * @param string|null $google
-     * @return string
-     */
-    public function Google($google = null)
-    {
-        return $this->getset('dc:identifier', $google, 'opf:scheme', 'GOOGLE');
-    }
-
-    /**
-     * Set or get the Amazon ID of the book
-     *
-     * @param string|null $amazon
-     * @return string
-     */
-    public function Amazon($amazon = null)
-    {
-        return $this->getset('dc:identifier', $amazon, 'opf:scheme', 'AMAZON');
-    }
-
-    /**
-     * Set or get the Calibre UUID of the book
-     *
-     * @param null|string $uuid
-     * @return string
-     */
-    public function Calibre($uuid = null)
-    {
-        return $this->getset('dc:identifier', $uuid, 'opf:scheme', 'calibre');
     }
 
     /**

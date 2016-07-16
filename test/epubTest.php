@@ -2,6 +2,8 @@
 
 namespace splitbrain\epubmeta\test;
 
+use splitbrain\epubmeta\test\EPub;
+
 class EPubTest extends \PHPUnit_Framework_TestCase
 {
     /** @var  EPub */
@@ -233,8 +235,14 @@ p {
 
     public function testDates()
     {
-        $this->assertEquals('1597', $this->epub->Date('original-publication'));
+        $this->assertEquals('1597', $this->epub->Date(EPub::DATE_PUB_ORIG));
         $this->assertEquals('2008-09-18', $this->epub->Date('ops-publication'));
+    }
+
+    public function testIdentifier()
+    {
+        $this->assertEquals('http://www.feedbooks.com/book/2936', $this->epub->Identifier(EPub::IDENT_URI));
+        $this->assertEquals('urn:uuid:7d38d098-4234-11e1-97b6-001cc0a62c0b', $this->epub->Identifier(EPub::IDENT_URN));
     }
 
     public function testGetCoverFile()
